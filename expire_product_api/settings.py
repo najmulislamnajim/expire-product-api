@@ -39,8 +39,9 @@ INSTALLED_APPS = [
     # Third Party Apps
     'rest_framework',
     'drf_spectacular',
-    'corsheaders'
+    'corsheaders',
     # My Apps
+    'material_app',
 ]
 
 MIDDLEWARE = [
