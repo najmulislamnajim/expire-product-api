@@ -158,6 +158,7 @@ SPECTACULAR_SETTINGS = {
 # Logger setup
 # Ensure log directories exist
 os.makedirs(BASE_DIR / 'logs/withdrawal_app', exist_ok=True)
+os.makedirs(BASE_DIR / 'logs/material_app', exist_ok=True)
 
 # Custom Date Formatter to format date and time into Dhaka timezone
 class DhakaFormatter(logging.Formatter):
@@ -243,6 +244,33 @@ LOGGING = {
             'maxBytes': 1024 * 1024 * 5,  # 5 MB
             'backupCount': 5, 
         },
+        'material_info': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs/material_app/info.log',
+            'formatter': 'standard',
+            'filters': ['info_only'],
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 5,  
+        },
+        'material_error': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs/material_app/error.log',
+            'formatter': 'standard',
+            'filters': ['error_only'],
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 5, 
+        },
+        'material_critical': {
+            'level': 'CRITICAL',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs/material_app/critical.log',
+            'formatter': 'standard',
+            'filters': ['critical_only'],
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB        
+            'backupCount': 5, 
+        },
     },
     'loggers':{
         '': {
@@ -252,6 +280,11 @@ LOGGING = {
         },
         'withdrawal_app': {
             'handlers': ['withdrawal_info', 'withdrawal_error', 'withdrawal_critical'],
+            'level': 'INFO',
+            'propagate': False
+        },
+        'material_app': {
+            'handlers': ['material_info', 'material_error', 'material_critical'],
             'level': 'INFO',
             'propagate': False
         },
