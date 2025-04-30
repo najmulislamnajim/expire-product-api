@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'corsheaders',
     # My Apps
     'material_app',
+    'withdrawal_app',
 ]
 
 MIDDLEWARE = [
