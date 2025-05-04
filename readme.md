@@ -17,6 +17,14 @@ To run on dev server,
 python manage.py runserver
 ```
 
+## API Docs
+
+Go to the following path to view the docs.
+
+```bash
+/api/v1/docs
+```
+
 ## Testing
 
 ### Create and seed database
