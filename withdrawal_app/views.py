@@ -52,6 +52,13 @@ class WithdrawalRequestView(APIView):
     
     
 class WithdrawalListView(APIView):
+    """
+    Handles GET requests for retrieving approval list based on the parameters.
+    
+    Filters the data based on `mio_id`, `rm_id`, `depot_id`, `da_id`, and `status`.
+    status should be: all, request_pending, request_approved, withdrawal_list, withdrawal_approved, order_pending, order_approved, order_delivered
+    """
+    @extend_schema(request=WithdrawalRequestSerializer)
     def get(self, request):
         """
         Handles GET requests for retrieving approval list based on the parameters.
