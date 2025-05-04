@@ -68,7 +68,7 @@ class WithdrawalRequestList(models.Model):
     material number, batch, quantities (pack, strip, unit), and net value. It is linked
     to the `WithdrawalInfo` model via a foreign key.
     """
-    invoice_id = models.ForeignKey(WithdrawalInfo, on_delete=models.CASCADE)
+    invoice_id = models.ForeignKey(WithdrawalInfo, on_delete=models.CASCADE, related_name='request_list')
     matnr = models.CharField(max_length=40)
     batch = models.CharField(max_length=40)
     pack_qty = models.IntegerField(default=0)
@@ -95,7 +95,7 @@ class WithdrawalList(models.Model):
     number, batch, quantities (pack, strip, unit), and net value. It is linked to the
     `WithdrawalInfo` model via a foreign key.
     """
-    invoice_id = models.ForeignKey(WithdrawalInfo, on_delete=models.CASCADE)
+    invoice_id = models.ForeignKey(WithdrawalInfo, on_delete=models.CASCADE, related_name='withdrawal_list')
     matnr = models.CharField(max_length=40)
     batch = models.CharField(max_length=40)
     pack_qty = models.IntegerField(default=0)
