@@ -130,7 +130,7 @@ class RequestApproveView(APIView):
         
         Args:
             request (Request): The HTTP request object.
-            pk (int): The primary key of the withdrawal request to be approved.
+            invoice_no (str): The invoice no of the withdrawal request to be confirmed.
         
         Returns:
             Response: A response object containing the approval status.
