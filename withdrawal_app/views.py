@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from drf_spectacular.utils import extend_schema
+from django.shortcuts import get_object_or_404
 from withdrawal_app.serializers import WithdrawalRequestSerializer
 from withdrawal_app.models import WithdrawalInfo
 
@@ -117,3 +118,25 @@ class WithdrawalListView(APIView):
         serializer = WithdrawalRequestSerializer(queryset, many=True)
         logger.info(f"Approval list fetched successfully for {mio_id}, {rm_id}, {depot_id}, {da_id}, {status}")
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    
+class RequestApproveView(APIView):
+    """
+    View to approve a withdrawal request.
+    """
+    def put(self, request, invoice_no):
+        """
+        Approve a withdrawal request.
+        
+        Args:
+            request (Request): The HTTP request object.
+            pk (int): The primary key of the withdrawal request to be approved.
+        
+        Returns:
+            Response: A response object containing the approval status.
+        """
+        withdrawal_request = get_object_or_404(WithdrawalInfo, invoice_no=invoice_no)
+        withdrawal_request.request_approval = True
+        withdrawal_request.request_approval_date = date.today()
+        withdrawal_request.save()
+        return Response({"detail": "Withdrawal request approved successfully."}, status=status.HTTP_200_OK)
