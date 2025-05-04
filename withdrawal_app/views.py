@@ -161,3 +161,24 @@ class WithdrawalConfirmationView(APIView):
         withdrawal_request.withdrawal_approval_date = date.today()
         withdrawal_request.save()
         return Response({"detail": "Withdrawal request confirmed successfully."}, status=status.HTTP_200_OK)
+    
+    
+class DaAssignView(APIView):
+    """
+    View to assign a delivery agent to a withdrawal request.
+    """
+    def put(self, request, invoice_no):
+        """
+        Assign a delivery agent to a withdrawal request.
+        
+        Args:
+            request (Request): The HTTP request object.
+            invoice_no (str): The invoice no of the withdrawal request to be assigned.
+        
+        Returns:
+            Response: A response object containing the assignment status.
+        """
+        withdrawal_request = get_object_or_404(WithdrawalInfo, invoice_no=invoice_no)
+        withdrawal_request.da_id = request.data.get('da_id')
+        withdrawal_request.save()
+        return Response({"detail": "Delivery agent assigned successfully."}, status=status.HTTP_200_OK)
