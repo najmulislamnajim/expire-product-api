@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from drf_spectacular.utils import extend_schema
 from withdrawal_app.serializers import WithdrawalRequestSerializer
+from withdrawal_app.models import WithdrawalInfo
 
 # Set logger
 logger = logging.getLogger("withdrawal_app")
@@ -48,3 +49,64 @@ class WithdrawalRequestView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         logger.error(f"Error creating withdrawal request {mio} : {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+class WithdrawalListView(APIView):
+    def get(self, request):
+        """
+        Handles GET requests for retrieving approval list based on the parameters.
+        
+        Filters the data based on `mio_id`, `rm_id`, `depot_id`, `da_id`, and `status`.
+        status should be: all, request_pending, request_approved, withdrawal_list, withdrawal_approved, order_pending, order_approved, order_delivered
+        """
+        mio_id = request.query_params.get('mio_id')
+        rm_id = request.query_params.get('rm_id')
+        depot_id = request.query_params.get('depot_id')
+        da_id = request.query_params.get('da_id')
+        stat = request.query_params.get('status')  # request_pending, request_approved, withdrawal_list, withdrawal_approved, order_pending, order_approved, order_delivered
+
+        queryset = WithdrawalInfo.objects.all()  # Default query
+        serializer_class = WithdrawalRequestSerializer # for  schema generation tools
+         
+        if not any([mio_id, rm_id, depot_id, da_id]):
+            return Response({"detail": "Please provide at least one ID (mio_id, rm_id, depot_id, or da_id)."}, status=status.HTTP_400_BAD_REQUEST)
+        if not stat:
+            return Response({"detail": "Please provide a valid status."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Filtering based on provided parameters
+        if mio_id:
+            queryset = queryset.filter(mio_id=mio_id)
+        if rm_id:
+            queryset = queryset.filter(rm_id=rm_id)
+        if depot_id:
+            queryset = queryset.filter(depot_id=depot_id)
+        if da_id:
+            queryset = queryset.filter(da_id=da_id)
+        
+        # Filter based on the status parameter
+        if stat == 'request_pending':
+            queryset = queryset.filter(request_approval=False)
+        elif stat == 'request_approved':
+            queryset = queryset.filter(request_approval=True)
+        elif stat == 'withdrawal_list':
+            queryset = queryset.filter(request_approval=True, withdrawal_confirmation=False)
+        elif stat == 'withdrawal_approved':
+            queryset = queryset.filter(withdrawal_confirmation=True)
+        elif stat == 'order_pending':
+            queryset = queryset.filter(withdrawal_confirmation=True,order_approval=False)
+        elif stat == 'order_approved':
+            queryset = queryset.filter(order_approval=True)
+        elif stat == 'order_delivered':
+            queryset = queryset.filter(order_delivery=True)
+        elif stat == 'all':
+            queryset = queryset            
+
+        # Ensure we return a meaningful response
+        if not queryset.exists():
+            logger.error(f"No matching records found. {mio_id}, {rm_id}, {depot_id}, {da_id}, {status}")
+            return Response({"detail": "No matching records found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Serialize the queryset and return it as a response
+        serializer = WithdrawalRequestSerializer(queryset, many=True)
+        logger.info(f"Approval list fetched successfully for {mio_id}, {rm_id}, {depot_id}, {da_id}, {status}")
+        return Response(serializer.data, status=status.HTTP_200_OK)
