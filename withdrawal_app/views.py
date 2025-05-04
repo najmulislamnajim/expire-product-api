@@ -140,3 +140,24 @@ class RequestApproveView(APIView):
         withdrawal_request.request_approval_date = date.today()
         withdrawal_request.save()
         return Response({"detail": "Withdrawal request approved successfully."}, status=status.HTTP_200_OK)
+    
+class WithdrawalConfirmationView(APIView):
+    """
+    View to confirm a withdrawal request.
+    """
+    def put(self, request, invoice_no):
+        """
+        Confirm a withdrawal request.
+        
+        Args:
+            request (Request): The HTTP request object.
+            invoice_no (str): The invoice no of the withdrawal request to be confirmed.
+        
+        Returns:
+            Response: A response object containing the confirmation status.
+        """
+        withdrawal_request = get_object_or_404(WithdrawalInfo, invoice_no=invoice_no)
+        withdrawal_request.withdrawal_confirmation = True
+        withdrawal_request.withdrawal_approval_date = date.today()
+        withdrawal_request.save()
+        return Response({"detail": "Withdrawal request confirmed successfully."}, status=status.HTTP_200_OK)
