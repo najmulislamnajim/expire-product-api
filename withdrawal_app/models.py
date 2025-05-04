@@ -19,7 +19,7 @@ class WithdrawalInfo(models.Model):
     mio_id = models.CharField(max_length=40)
     rm_id = models.CharField(max_length=40)
     da_id = models.CharField(max_length=40)
-    depot_id = models.CharField(max_length=40)
+    depot_id = models.CharField(max_length=40, null=True, blank=True)
     route_id = models.CharField(max_length=40)
     partner_id = models.CharField(max_length=40)
     request_approval = models.BooleanField(default=False)
