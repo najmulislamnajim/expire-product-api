@@ -96,4 +96,9 @@ class WithdrawalSerializer(serializers.ModelSerializer):
         model = WithdrawalInfo
         fields = '__all__'
         read_only_fields = '__all__'
+
+class DaAssignSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WithdrawalInfo
+        fields = ['da_id']
     
