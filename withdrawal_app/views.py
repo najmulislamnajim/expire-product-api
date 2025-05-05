@@ -184,9 +184,22 @@ class DaAssignView(APIView):
         return Response({"detail": "Delivery agent assigned successfully."}, status=status.HTTP_200_OK)
     
     
-class WithdrawalView(APIView):
+class WithdrawalSaveView(APIView):
+    """
+    View to save a withdrawal request.
+    """
     @extend_schema(request=WithdrawalListSerializer(many=True)) # for drf-spectacular documentation
     def post(self, request, invoice_no):
+        """
+        Save a withdrawal request.
+        
+        Args:
+            request (Request): The HTTP request object.
+            invoice_no (str): The invoice no of the withdrawal request to be saved.
+        
+        Returns:
+            Response: A response object containing the save status.
+        """
         try:
             info = WithdrawalInfo.objects.get(invoice_no=invoice_no)
         except WithdrawalInfo.DoesNotExist:
