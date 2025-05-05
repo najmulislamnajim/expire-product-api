@@ -95,7 +95,7 @@ class WithdrawalSerializer(serializers.ModelSerializer):
     class Meta:
         model = WithdrawalInfo
         fields = '__all__'
-        read_only_fields = '__all__'
+        read_only_fields = ('withdrawal_list',)
 
 class DaAssignSerializer(serializers.ModelSerializer):
     class Meta:
