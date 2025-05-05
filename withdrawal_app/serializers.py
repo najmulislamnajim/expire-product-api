@@ -11,7 +11,7 @@ class WithdrawalRequestListSerializer(serializers.ModelSerializer):
         model = WithdrawalRequestList
         fields = '__all__'
         extra_kwargs = {
-            'invoice_id': {'read_only': True}
+            'invoice_no': {'read_only': True}
         }
 class WithdrawalListSerializer(serializers.ModelSerializer):
     """
@@ -22,10 +22,14 @@ class WithdrawalListSerializer(serializers.ModelSerializer):
     class Meta:
         model = WithdrawalList
         fields = '__all__'
-        extra_kwargs = {
-            'invoice_id': {'read_only': True}
-        }
+        read_only_fields = ['invoice_id'] 
         
+    def create(self, validated_data):
+        # Get the invoice_no from the context
+        invoice_no = self.context.get('invoice_no')
+        validated_data['invoice_no'] = invoice_no  # Add the invoice_no to validated_data
+        return WithdrawalList.objects.create(**validated_data)
+
 class WithdrawalRequestSerializer(serializers.ModelSerializer):
     """
     Serializer for the WithdrawalInfo model.
@@ -84,3 +88,12 @@ class WithdrawalRequestSerializer(serializers.ModelSerializer):
         for request_data in requests_data:
             WithdrawalRequestList.objects.create(invoice_id=info, **request_data)
         return info
+    
+    
+class WithdrawalSerializer(serializers.ModelSerializer):
+    withdrawal_list = WithdrawalListSerializer(many=True, read_only=True)
+    class Meta:
+        model = WithdrawalInfo
+        fields = '__all__'
+        read_only_fields = '__all__'
+    
