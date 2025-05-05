@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from drf_spectacular.utils import extend_schema
 from django.shortcuts import get_object_or_404
-from withdrawal_app.serializers import WithdrawalRequestSerializer, WithdrawalSerializer, WithdrawalListSerializer
+from withdrawal_app.serializers import WithdrawalRequestSerializer, WithdrawalSerializer, WithdrawalListSerializer, DaAssignSerializer
 from withdrawal_app.models import WithdrawalInfo
 
 # Set logger
@@ -167,6 +167,7 @@ class DaAssignView(APIView):
     """
     View to assign a delivery agent to a withdrawal request.
     """
+    @extend_schema(request=DaAssignSerializer)
     def put(self, request, invoice_no):
         """
         Assign a delivery agent to a withdrawal request.
@@ -179,9 +180,11 @@ class DaAssignView(APIView):
             Response: A response object containing the assignment status.
         """
         withdrawal_request = get_object_or_404(WithdrawalInfo, invoice_no=invoice_no)
-        withdrawal_request.da_id = request.data.get('da_id')
-        withdrawal_request.save()
-        return Response({"detail": "Delivery agent assigned successfully."}, status=status.HTTP_200_OK)
+        serializer = DaAssignSerializer(withdrawal_request, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"detail": "Delivery agent assigned successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     
 class WithdrawalSaveView(APIView):
