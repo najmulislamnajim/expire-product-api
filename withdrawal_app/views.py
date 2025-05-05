@@ -52,12 +52,12 @@ class WithdrawalRequestView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     
-class WithdrawalListView(APIView):
+class WithdrawalRequestListView(APIView):
     """
     Handles GET requests for retrieving approval list based on the parameters.
     
     Filters the data based on `mio_id`, `rm_id`, `depot_id`, `da_id`, and `status`.
-    status should be: all, request_pending, request_approved, withdrawal_list, withdrawal_approved, order_pending, order_approved, order_delivered
+    status should be: all, request_pending, request_approved
     """
     @extend_schema(request=WithdrawalRequestSerializer)
     def get(self, request):
@@ -65,7 +65,7 @@ class WithdrawalListView(APIView):
         Handles GET requests for retrieving approval list based on the parameters.
         
         Filters the data based on `mio_id`, `rm_id`, `depot_id`, `da_id`, and `status`.
-        status should be: all, request_pending, request_approved, withdrawal_list, withdrawal_approved, order_pending, order_approved, order_delivered
+        status should be: all, request_pending, request_approved
         """
         mio_id = request.query_params.get('mio_id')
         rm_id = request.query_params.get('rm_id')
@@ -96,18 +96,8 @@ class WithdrawalListView(APIView):
             queryset = queryset.filter(request_approval=False)
         elif stat == 'request_approved':
             queryset = queryset.filter(request_approval=True)
-        elif stat == 'withdrawal_list':
-            queryset = queryset.filter(request_approval=True, withdrawal_confirmation=False)
-        elif stat == 'withdrawal_approved':
-            queryset = queryset.filter(withdrawal_confirmation=True)
-        elif stat == 'order_pending':
-            queryset = queryset.filter(withdrawal_confirmation=True,order_approval=False)
-        elif stat == 'order_approved':
-            queryset = queryset.filter(order_approval=True)
-        elif stat == 'order_delivered':
-            queryset = queryset.filter(order_delivery=True)
-        elif stat == 'all':
-            queryset = queryset            
+        else:
+            return Response({"detail": "Please provide a valid status."}, status=status.HTTP_404_NOT_FOUND)           
 
         # Ensure we return a meaningful response
         if not queryset.exists():
