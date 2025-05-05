@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from drf_spectacular.utils import extend_schema
 from django.shortcuts import get_object_or_404
-from withdrawal_app.serializers import WithdrawalRequestSerializer
+from withdrawal_app.serializers import WithdrawalRequestSerializer, WithdrawalSerializer, WithdrawalListSerializer
 from withdrawal_app.models import WithdrawalInfo
 
 # Set logger
@@ -182,3 +182,29 @@ class DaAssignView(APIView):
         withdrawal_request.da_id = request.data.get('da_id')
         withdrawal_request.save()
         return Response({"detail": "Delivery agent assigned successfully."}, status=status.HTTP_200_OK)
+    
+    
+class WithdrawalView(APIView):
+    @extend_schema(request=WithdrawalListSerializer(many=True)) # for drf-spectacular documentation
+    def post(self, request, invoice_no):
+        try:
+            info = WithdrawalInfo.objects.get(invoice_no=invoice_no)
+        except WithdrawalInfo.DoesNotExist:
+            return Response({"detail": "Withdrawal request does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        # Get DA id for logging
+        da_id = info.da_id
+        # Update the withdrawal_date and save
+        info.withdrawal_date = date.today()
+        info.save()
+        
+        # Get the withdrawal items
+        data = request.data
+        
+        # Validate and save
+        serializer = WithdrawalListSerializer(data=data, many=True, context={'invoice_no': info.invoice_no})
+        if serializer.is_valid():
+            serializer.save()
+            logger.info("Withdrawal successfully created for DA %s", da_id)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        logger.error(f"Error creating withdrawal {da_id} : {serializer.errors}")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
