@@ -2,6 +2,7 @@ from django.urls import path
 from .import views as withdrawal_views
 
 urlpatterns = [
+    path('list', withdrawal_views.WithdrawalListView.as_view(), name='withdrawal_list'),
     path('request/list', withdrawal_views.WithdrawalRequestListView.as_view(), name='withdrawal_request_list'),
     path('request', withdrawal_views.WithdrawalRequestView.as_view(), name='withdrawal_request'),
     path('request/approve/<str:invoice_no>', withdrawal_views.RequestApproveView.as_view(), name='request_approve'),
