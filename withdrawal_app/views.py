@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from drf_spectacular.utils import extend_schema
 from django.shortcuts import get_object_or_404
+from django.db import connection
 from withdrawal_app.serializers import WithdrawalRequestSerializer, WithdrawalSerializer, WithdrawalListSerializer, DaAssignSerializer
 from withdrawal_app.models import WithdrawalInfo
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
@@ -33,7 +34,32 @@ class WithdrawalRequestView(APIView):
         Returns:
             Response: A response object containing the created withdrawal request data.
         """ 
+        # Make a copy of the request data to avoid modifying the original data
         data = request.data.copy()
+        
+        # Get Depot Code and Route Id
+        sql_query = """
+        SELECT depot_code, route_code
+        FROM rpl_customer AS c 
+        INNER JOIN rdl_route_wise_depot AS rd ON c.trans_p_zone=CONCAT('0000',rd.route_code)
+        WHERE c.partner=%s;
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(sql_query, [data['partner_id']])
+            result = cursor.fetchone()
+        depot_code, route_code = result
+        data['depot_id'] = depot_code
+        data['route_id'] = route_code
+        
+        # Convert invoice type and validate invoice type
+        if data['invoice_type'] == 'Expired':
+            data['invoice_type'] = 'EXP'
+        elif data['invoice_type'] == 'General':
+            data['invoice_type'] = 'GEN'
+        else:
+            logger.error("Invalid invoice type provided. %s", mio)
+            return Response({'success':False,"detail": "Invalid invoice type"}, status=status.HTTP_400_BAD_REQUEST)
+
         # Set default values
         data['request_approval'] = False
         data['withdrawal_confirmation'] = False
@@ -42,7 +68,7 @@ class WithdrawalRequestView(APIView):
         data['order_delivery'] = False
         data['last_status'] = 'request'
         data['request_date'] = date.today()
-        mio = data.pop('mio_id')
+        mio = data.get('mio_id')
         # Validate and save
         serializer = WithdrawalRequestSerializer(data=data)
         if serializer.is_valid():
