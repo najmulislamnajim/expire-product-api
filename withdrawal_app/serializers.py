@@ -7,11 +7,17 @@ class WithdrawalRequestListSerializer(serializers.ModelSerializer):
     
     This serializer is used to create a withdrawal request list.
     """
+    expire_date = serializers.DateField(required=True)
+    pack_qty = serializers.IntegerField(required=True, min_value=0)
+    strip_qty = serializers.IntegerField(required=True, min_value=0)
+    unit_qty = serializers.IntegerField(required=True, min_value=0)
+    net_val = serializers.DecimalField(max_digits=10, decimal_places=2, required=True, min_value=0)
     class Meta:
         model = WithdrawalRequestList
         fields = '__all__'
         extra_kwargs = {
-            'invoice_no': {'read_only': True}
+            'invoice_id': {'read_only': True}
+
         }
 class WithdrawalListSerializer(serializers.ModelSerializer):
     """
@@ -39,9 +45,10 @@ class WithdrawalRequestSerializer(serializers.ModelSerializer):
     # These fields are both readable and writable
     mio_id = serializers.CharField()
     rm_id = serializers.CharField()
+    partner_id = serializers.CharField()
+    invoice_type = serializers.ChoiceField(choices=WithdrawalInfo.InvoiceType.choices)
     depot_id = serializers.CharField()
     route_id = serializers.CharField()
-    partner_id = serializers.CharField()
 
     # Read-only fields
     invoice_no = serializers.CharField(read_only=True)
@@ -66,7 +73,7 @@ class WithdrawalRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = WithdrawalInfo
         fields = [
-            'invoice_no', 'mio_id', 'rm_id', 'da_id', 'depot_id', 'route_id', 'partner_id',
+            'invoice_no','invoice_type', 'mio_id', 'rm_id', 'da_id', 'depot_id', 'route_id', 'partner_id',
             'request_approval', 'withdrawal_confirmation', 'replacement_order',
             'order_approval', 'order_delivery', 'last_status', 'request_date',
             'request_approval_date', 'withdrawal_date', 'withdrawal_approval_date',
