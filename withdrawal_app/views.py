@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.db import connection
 from withdrawal_app.serializers import WithdrawalRequestSerializer, WithdrawalSerializer, WithdrawalListSerializer, DaAssignSerializer
 from withdrawal_app.models import WithdrawalInfo
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, OpenApiTypes
 
 # Set logger
 logger = logging.getLogger("withdrawal_app")
@@ -86,7 +86,22 @@ class WithdrawalRequestListView(APIView):
     Filters the data based on `mio_id`, `rm_id`, `depot_id`, `da_id`, and `status`.
     status should be: all, request_pending, request_approved
     """
-    @extend_schema(request=WithdrawalRequestSerializer)
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='mio_id', type=OpenApiTypes.STR, location=OpenApiParameter.QUERY, required=False),
+            OpenApiParameter(name='rm_id', type=OpenApiTypes.STR, location=OpenApiParameter.QUERY, required=False),
+            OpenApiParameter(name='depot_id', type=OpenApiTypes.STR, location=OpenApiParameter.QUERY, required=False),
+            OpenApiParameter(name='da_id', type=OpenApiTypes.STR, location=OpenApiParameter.QUERY, required=False),
+            OpenApiParameter(
+                name='status',
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=True,
+                description="Options: request_pending, request_approved, all"
+            ),
+        ],
+        responses=WithdrawalRequestSerializer(many=True)
+    )
     def get(self, request):
         """
         Handles GET requests for retrieving approval list based on the parameters.
@@ -98,7 +113,7 @@ class WithdrawalRequestListView(APIView):
         rm_id = request.query_params.get('rm_id')
         depot_id = request.query_params.get('depot_id')
         da_id = request.query_params.get('da_id')
-        stat = request.query_params.get('status')  # request_pending, request_approved, withdrawal_list, withdrawal_approved, order_pending, order_approved, order_delivered
+        stat = request.query_params.get('status')  # request_pending, request_approved
 
         queryset = WithdrawalInfo.objects.all()  # Default query
         serializer_class = WithdrawalRequestSerializer # for  schema generation tools
