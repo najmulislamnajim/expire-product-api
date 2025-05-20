@@ -12,13 +12,14 @@ class WithdrawalRequestListSerializer(serializers.ModelSerializer):
     strip_qty = serializers.IntegerField(required=True, min_value=0)
     unit_qty = serializers.IntegerField(required=True, min_value=0)
     net_val = serializers.DecimalField(max_digits=10, decimal_places=2, required=True, min_value=0)
+
     class Meta:
         model = WithdrawalRequestList
-        fields = '__all__'
+        exclude = ['created_at', 'updated_at']
         extra_kwargs = {
             'invoice_id': {'read_only': True}
-
         }
+       
 class WithdrawalListSerializer(serializers.ModelSerializer):
     """
     Serializer for the WithdrawalList model.
