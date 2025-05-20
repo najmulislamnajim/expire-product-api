@@ -14,13 +14,17 @@ class WithdrawalInfo(models.Model):
         REQUEST = 'request', 'Request'
         WITHDRAWAL = 'withdrawal', 'Withdrawal'
         DELIVERY = 'delivery', 'Delivery'
+    class InvoiceType(models.TextChoices):
+        WITHDRAWAL = 'EXP', 'Expired'
+        REPLACEMENT = 'GEN', 'General'
     id = models.BigAutoField(primary_key=True)
     invoice_no = models.CharField(max_length=12, unique=True, blank=True, null=True)
+    invoice_type = models.CharField(max_length=12, choices=InvoiceType.choices, default=InvoiceType.WITHDRAWAL)
     mio_id = models.CharField(max_length=40)
     rm_id = models.CharField(max_length=40)
-    da_id = models.CharField(max_length=40)
+    da_id = models.CharField(max_length=40, null=True, blank=True)
     depot_id = models.CharField(max_length=40, null=True, blank=True)
-    route_id = models.CharField(max_length=40)
+    route_id = models.CharField(max_length=40, null=True, blank=True)
     partner_id = models.CharField(max_length=40)
     request_approval = models.BooleanField(default=False)
     withdrawal_confirmation = models.BooleanField(default=False)
@@ -31,7 +35,7 @@ class WithdrawalInfo(models.Model):
     request_approval_date = models.DateField(null=True, blank=True)
     withdrawal_date = models.DateField(null=True, blank=True)
     withdrawal_approval_date = models.DateField(null=True, blank=True)
-    order_date = models.DateField(null=True, blank=True)
+    order_date = models.DateField(null=True, blank=True) 
     order_approval_date = models.DateField(null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
     last_status = models.CharField(max_length=40, choices=Status.choices, default=Status.REQUEST)
