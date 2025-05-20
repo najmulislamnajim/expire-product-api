@@ -15,11 +15,11 @@ class WithdrawalInfo(models.Model):
         WITHDRAWAL = 'withdrawal', 'Withdrawal'
         DELIVERY = 'delivery', 'Delivery'
     class InvoiceType(models.TextChoices):
-        WITHDRAWAL = 'EXP', 'Expired'
-        REPLACEMENT = 'GEN', 'General'
+        EXPIRED = 'EXP', 'Expired'
+        GENERAL = 'GEN', 'General'
     id = models.BigAutoField(primary_key=True)
     invoice_no = models.CharField(max_length=12, unique=True, blank=True, null=True)
-    invoice_type = models.CharField(max_length=12, choices=InvoiceType.choices, default=InvoiceType.WITHDRAWAL)
+    invoice_type = models.CharField(max_length=12, choices=InvoiceType.choices, default=InvoiceType.EXPIRED)
     mio_id = models.CharField(max_length=40)
     rm_id = models.CharField(max_length=40)
     da_id = models.CharField(max_length=40, null=True, blank=True)
