@@ -114,44 +114,50 @@ class WithdrawalRequestListView(APIView):
         depot_id = request.query_params.get('depot_id')
         da_id = request.query_params.get('da_id')
         stat = request.query_params.get('status')  # request_pending, request_approved
+        try:
+            queryset = WithdrawalInfo.objects.all()  # Default query
+            
+            if not any([mio_id, rm_id, depot_id, da_id]):
+                return Response({"detail": "Please provide at least one ID (mio_id, rm_id, depot_id, or da_id)."}, status=status.HTTP_400_BAD_REQUEST)
+            if not stat:
+                return Response({"detail": "Please provide a valid status."}, status=status.HTTP_400_BAD_REQUEST)
 
-        queryset = WithdrawalInfo.objects.all()  # Default query
-        serializer_class = WithdrawalRequestSerializer # for  schema generation tools
-         
-        if not any([mio_id, rm_id, depot_id, da_id]):
-            return Response({"detail": "Please provide at least one ID (mio_id, rm_id, depot_id, or da_id)."}, status=status.HTTP_400_BAD_REQUEST)
-        if not stat:
-            return Response({"detail": "Please provide a valid status."}, status=status.HTTP_404_NOT_FOUND)
+            # Filtering based on provided parameters
+            filters = {}
+            if mio_id:
+                filters['mio_id'] = mio_id
+            if rm_id:
+                filters['rm_id'] = rm_id
+            if depot_id:
+                filters['depot_id'] = depot_id
+            if da_id:
+                filters['da_id'] = da_id
 
-        # Filtering based on provided parameters
-        if mio_id:
-            queryset = queryset.filter(mio_id=mio_id)
-        if rm_id:
-            queryset = queryset.filter(rm_id=rm_id)
-        if depot_id:
-            queryset = queryset.filter(depot_id=depot_id)
-        if da_id:
-            queryset = queryset.filter(da_id=da_id)
-        
-        # Filter based on the status parameter
-        if stat == 'request_pending':
-            queryset = queryset.filter(request_approval=False)
-        elif stat == 'request_approved':
-            queryset = queryset.filter(request_approval=True)
-        elif stat == 'all':
-            queryset = queryset
-        else:
-            return Response({"detail": "Please provide a valid status."}, status=status.HTTP_404_NOT_FOUND)           
+            if filters:
+                queryset = queryset.filter(**filters)
+            
+            # Filter based on the status parameter
+            if stat == 'request_pending':
+                queryset = queryset.filter(request_approval=False)
+            elif stat == 'request_approved':
+                queryset = queryset.filter(request_approval=True)
+            elif stat == 'all':
+                pass
+            else:
+                return Response({"detail": "Please provide a valid status."}, status=status.HTTP_400_BAD_REQUEST)           
 
-        # Ensure we return a meaningful response
-        if not queryset.exists():
-            logger.error(f"No matching records found. {mio_id}, {rm_id}, {depot_id}, {da_id}, {status}")
-            return Response({"detail": "No matching records found."}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Serialize the queryset and return it as a response
-        serializer = WithdrawalRequestSerializer(queryset, many=True)
-        logger.info(f"Approval list fetched successfully for {mio_id}, {rm_id}, {depot_id}, {da_id}, {status}")
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            # If no records match the provided parameters, return a 404 response
+            if not queryset.exists():
+                logger.error(f"No matching records found. {mio_id}, {rm_id}, {depot_id}, {da_id}, {stat}")
+                return Response({"detail": "No matching records found."}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Serialize the queryset and return it as a response
+            serializer = WithdrawalRequestSerializer(queryset, many=True)
+            logger.info(f"Approval list fetched successfully for {mio_id}, {rm_id}, {depot_id}, {da_id}, {stat}")
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Database error: {str(e)}")
+            return Response({"detail": "An error occurred while fetching data from database."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     
 class RequestApproveView(APIView):
