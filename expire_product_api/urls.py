@@ -12,5 +12,5 @@ urlpatterns = [
     path('api/docs/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     path('api/v1/material/', include('material_app.urls')),
     path('api/v1/withdrawal/', include('withdrawal_app.urls')),
-    path('api/v1/radisoft/withdrawal/', include('withdrawal_app.urls')),
+    path('api/v1/exp/withdrawal/', include('withdrawal_app.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
