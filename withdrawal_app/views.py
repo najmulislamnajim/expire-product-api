@@ -23,6 +23,7 @@ class WithdrawalRequestView(APIView):
     Returns:
         Response: A response object containing the created withdrawal request data.
     """
+    serializer_class = WithdrawalRequestSerializer
     @extend_schema(request=WithdrawalRequestSerializer) # for drf-spectacular documentation
     def post(self, request):
         """
@@ -164,6 +165,7 @@ class RequestApproveView(APIView):
     """
     View to approve a withdrawal request.
     """
+    schema = None # Disable schema generation
     def put(self, request, invoice_no):
         """
         Approve a withdrawal request.
@@ -211,6 +213,7 @@ class WithdrawalSaveView(APIView):
     """
     View to save a withdrawal request.
     """
+    serializer_class = WithdrawalListSerializer(many=True)
     @extend_schema(request=WithdrawalListSerializer(many=True)) # for drf-spectacular documentation
     def post(self, request, invoice_no):
         """
@@ -327,6 +330,7 @@ class WithdrawalConfirmationView(APIView):
     """
     View to confirm a withdrawal request.
     """
+    schema = None  # Disable schema generation
     def put(self, request, invoice_no):
         """
         Confirm a withdrawal request.
