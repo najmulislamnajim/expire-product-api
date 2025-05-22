@@ -209,7 +209,7 @@ class WithdrawalRequestListView(APIView):
         
         # Fetching material list
         material_list_query = """
-        SELECT rl.*, m.material_name, m.producer_company
+        SELECT rl.*, m.material_name, m.producer_company, m.unit_tp, m.unit_vat 
         FROM expr_request_list AS rl 
         INNER JOIN rpl_material AS m ON rl.matnr = m.matnr
         WHERE rl.invoice_id_id = %s;
@@ -234,6 +234,8 @@ class WithdrawalRequestListView(APIView):
                 "strip_qty": material[4],
                 "unit_qty": material[5],
                 "net_val": material[6],
+                "unit_tp": material[13],
+                "unit_vat": material[14],
                 "expire_date": material[10],
             })
         
