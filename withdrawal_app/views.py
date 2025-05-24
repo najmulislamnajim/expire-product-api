@@ -265,6 +265,7 @@ class RequestApproveView(APIView):
         withdrawal_request = get_object_or_404(WithdrawalInfo, invoice_no=invoice_no)
         withdrawal_request.request_approval = True
         withdrawal_request.request_approval_date = date.today()
+        withdrawal_request.last_status = 'request_approved'
         withdrawal_request.save()
         return Response({"detail": "Withdrawal request approved successfully."}, status=status.HTTP_200_OK)
        
