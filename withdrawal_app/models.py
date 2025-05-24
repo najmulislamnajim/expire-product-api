@@ -12,7 +12,9 @@ class WithdrawalInfo(models.Model):
     """
     class Status(models.TextChoices):
         REQUEST = 'request', 'Request'
+        REQUEST_APPROVED = 'request_approved', 'Request Approved'
         WITHDRAWAL = 'withdrawal', 'Withdrawal'
+        WITHDRAWAL_APPROVED = 'withdrawal_approved', 'Withdrawal Approved'
         DELIVERY = 'delivery', 'Delivery'
     class InvoiceType(models.TextChoices):
         EXPIRED = 'EXP', 'Expired'
