@@ -67,7 +67,6 @@ class WithdrawalRequestSerializer(serializers.ModelSerializer):
     order_date = serializers.DateField(read_only=True)
     order_approval_date = serializers.DateField(read_only=True)
     delivery_date = serializers.DateField(read_only=True)
-    last_status = serializers.CharField(read_only=True)
     # request list (withdrawal requested products)
     request_list = WithdrawalRequestListSerializer(many=True)
     class Meta:
@@ -96,6 +95,54 @@ class WithdrawalRequestSerializer(serializers.ModelSerializer):
             WithdrawalRequestList.objects.create(invoice_id=info, **request_data)
         return info
     
+    def update(self, instance, validated_data):
+        """
+        Update an existing withdrawal request.
+
+        Args:
+            instance (WithdrawalInfo): The existing withdrawal request instance to update.
+            validated_data (dict): A dictionary containing validated data for updating the withdrawal request.
+
+        Returns:
+            WithdrawalInfo: The updated withdrawal request instance.
+        """
+        requests_data = validated_data.pop('request_list',[])
+        
+        # request list update 
+        # Get the existing items and create a dictionary for efficient lookup
+        existing_items = WithdrawalRequestList.objects.filter(invoice_id=instance)
+        existing_items_dict = {
+            (item.expire_date, item.pack_qty, item.strip_qty, item.unit_qty, item.net_val): item
+            for item in existing_items
+        }
+        
+        # Update existing items and create new items
+        new_items = set()
+        for item in requests_data:
+            key = (
+                item['expire_date'],
+                item['pack_qty'],
+                item['strip_qty'],
+                item['unit_qty'],
+                item['net_val']
+            )
+            new_items.add(key)
+            
+            existing_item = existing_items_dict.get(key)
+            if existing_item:
+                for attr, value in item.items():
+                    setattr(existing_item, attr, value)
+                existing_item.save()
+            else:
+                WithdrawalRequestList.objects.create(invoice_id=instance, **item)
+        
+        # Delete removed items
+        for key, item in existing_items_dict.items():
+            if key not in new_items:
+                item.delete()
+        
+        # Return the updated instance
+        return instance
     
 class WithdrawalSerializer(serializers.ModelSerializer):
     withdrawal_list = WithdrawalListSerializer(many=True, read_only=True)
