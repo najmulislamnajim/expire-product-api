@@ -39,6 +39,8 @@ class WithdrawalRequestView(APIView):
         # Make a copy of the request data to avoid modifying the original data
         data = request.data.copy()
         
+        mio = data.get('mio_id')
+        
         # Get Depot Code and Route Id
         sql_query = """
         SELECT depot_code, route_code
@@ -49,6 +51,10 @@ class WithdrawalRequestView(APIView):
         with connection.cursor() as cursor:
             cursor.execute(sql_query, [data['partner_id']])
             result = cursor.fetchone()
+        
+        if not result:
+            logger.error("No depot code found for the given partner ID. %s", data['partner_id'])
+            return Response({'success':False,"detail": "No depot code found for the given partner ID"}, status=status.HTTP_400_BAD_REQUEST)
         depot_code, route_code = result
         data['depot_id'] = depot_code
         data['route_id'] = route_code
@@ -70,7 +76,7 @@ class WithdrawalRequestView(APIView):
         data['order_delivery'] = False
         data['last_status'] = 'request'
         data['request_date'] = date.today()
-        mio = data.get('mio_id')
+        
         # Validate and save
         serializer = WithdrawalRequestSerializer(data=data)
         if serializer.is_valid():
