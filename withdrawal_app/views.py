@@ -190,7 +190,7 @@ class WithdrawalRequestListView(APIView):
         
         # Fetching material list query
         material_list_query = """
-        SELECT rl.invoice_id_id AS invoice_id, rl.matnr, rl.batch, rl.pack_qty, rl.strip_qty, rl.unit_qty, rl.net_val, rl.expire_date, m.material_name, m.producer_company, m.unit_tp, m.unit_vat 
+        SELECT rl.id AS list_id, rl.invoice_id_id AS invoice_id, rl.matnr, rl.batch, rl.pack_qty, rl.strip_qty, rl.unit_qty, rl.net_val, rl.expire_date, m.material_name, m.producer_company, m.unit_tp, m.unit_vat 
         FROM expr_request_list AS rl 
         INNER JOIN rpl_material AS m ON rl.matnr = m.matnr
         WHERE rl.invoice_id_id IN %s;
@@ -211,6 +211,7 @@ class WithdrawalRequestListView(APIView):
         material_map = defaultdict(list)
         for mat in materials:
             material_map[mat['invoice_id']].append({
+                "list_id": mat['list_id'],
                 "matnr": mat['matnr'],
                 "material_name": mat['material_name'],
                 "producer_company": mat['producer_company'],
