@@ -5,6 +5,7 @@ urlpatterns = [
     path('list', withdrawal_views.WithdrawalListView.as_view(), name='withdrawal_list'),
     path('request/list', withdrawal_views.WithdrawalRequestListView.as_view(), name='withdrawal_request_list'),
     path('request', withdrawal_views.WithdrawalRequestView.as_view(), name='withdrawal_request'),
+    path('request/edit/<str:invoice_no>', withdrawal_views.WithdrawalRequestUpdateView.as_view(), name='withdrawal_request_edit'),
     path('request/approve/<str:invoice_no>', withdrawal_views.RequestApproveView.as_view(), name='request_approve'),
     path('assign-da/<str:invoice_no>', withdrawal_views.DaAssignView.as_view(), name='da_assign'),
     path('save/<str:invoice_no>',withdrawal_views.WithdrawalSaveView.as_view(), name='withdrawal_save'),
