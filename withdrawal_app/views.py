@@ -9,6 +9,7 @@ from django.db import connection
 from withdrawal_app.serializers import WithdrawalRequestSerializer, WithdrawalSerializer, WithdrawalListSerializer, DaAssignSerializer
 from withdrawal_app.models import WithdrawalInfo
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, OpenApiTypes
+from collections import defaultdict
 
 # Set logger
 logger = logging.getLogger("withdrawal_app")
@@ -98,152 +99,131 @@ class WithdrawalRequestListView(APIView):
         rm_id = request.query_params.get('rm_id')
         depot_id = request.query_params.get('depot_id')
         da_id = request.query_params.get('da_id')
-        stat = request.query_params.get('status')  # request_pending, request_approved
+        status_filter = request.query_params.get('status')  # request_pending, request_approved
         
-        # Get mio, rm, depot, da, route, customer information
-        main_info_query = """
+        # Validate inputs 
+        if not any([mio_id, rm_id, depot_id, da_id]):
+            return Response({"detail": "Please provide at least one ID (mio_id, rm_id, depot_id, or da_id)."}, status=status.HTTP_400_BAD_REQUEST)
+        if status_filter not in ['all', 'request_pending', 'request_approved']:
+            return Response({"detail": "Please provide a valid status.[all, request_pending, request_approved]"}, status=status.HTTP_400_BAD_REQUEST)
+               
+        # filter based on mio, rm, depot , da id
+        params = []
+        filters = []
+        if mio_id:
+            filters.append("wi.mio_id = %s")
+            params.append(mio_id)
+        if rm_id:
+            filters.append("wi.rm_id = %s")
+            params.append(rm_id)
+        if depot_id:
+            filters.append("wi.depot_id = %s")
+            params.append(depot_id)
+        if da_id:
+            filters.append("wi.da_id = %s")
+            params.append(da_id)
+        
+        # Filtering based on status
+        if status_filter == 'request_pending':
+            filters.append("wi.request_approval = 0")
+        elif status_filter == 'request_approved':
+            filters.append("wi.request_approval = 1")
+            
+        # Verify if filters are present
+        if not filters:
+            return Response({"detail": "At least one filter is required."}, status=status.HTTP_400_BAD_REQUEST)
+        # where  clause
+        where_clause = " AND ".join(filters)
+        
+        # WithdrawalInfo query
+        main_info_query = f"""
             SELECT
-                wi.*,
+                wi.id, wi.invoice_no, wi.mio_id, wi.rm_id, wi.da_id, wi.depot_id, wi.route_id, wi.partner_id, wi.request_approval, wi.withdrawal_confirmation, wi.replacement_order, wi.order_approval, wi.order_delivery, wi.request_date, wi.request_approval_date, wi.withdrawal_date, wi.withdrawal_approval_date, wi.order_date, wi.order_approval_date, wi.delivery_date, wi.last_status, wi.invoice_type, 
                 mio.`name` AS mio_name,
                 mio.mobile_number AS mio_mobile,
                 rm.`name` AS rm_name,
                 rm.mobile_number AS rm_mobile,
-                CONCAT(c.name1, ' ', c.name2) AS partner_name,
+                CONCAT(COALESCE(c.name1, ''), ' ', COALESCE(c.name2, '')) AS partner_name,
                 c.contact_person AS customer_name, 
                 c.mobile_no AS customer_number,
-                CONCAT(c.street, ' ', c.street1, ' ', c.street2, ' ', c.street3, ' ', c.post_code, ' ', c.district) AS customer_address,
+                CONCAT(
+                    COALESCE(c.street, ''), ' ', COALESCE(c.street1, ''), ' ', COALESCE(c.street2, ''), ' ', COALESCE(c.street3, ''), ' ', COALESCE(c.post_code, ''), ' ', COALESCE(c.district, '')
+                ) AS customer_address,
                 depot.depot_name AS depot_name,
                 depot.route_name AS route_name,
                 da.full_name AS da_name,
                 da.mobile_number AS da_mobile
             FROM expr_withdrawal_info AS wi 
-            INNER JOIN rpl_user_list AS mio ON wi.mio_id = mio.work_area_t
-            INNER JOIN rpl_user_list AS rm ON wi.rm_id = rm.work_area_t
-            INNER JOIN rpl_customer AS c ON wi.partner_id = c.partner
+            INNER JOIN rpl_user_list AS mio ON wi.mio_id = mio.work_area_t 
+            INNER JOIN rpl_user_list AS rm ON wi.rm_id = rm.work_area_t 
+            INNER JOIN rpl_customer AS c ON wi.partner_id = c.partner 
             INNER JOIN rdl_route_wise_depot AS depot ON wi.depot_id = depot.depot_code AND wi.route_id = depot.route_code
             LEFT JOIN rdl_users_list AS da ON wi.da_id = da.sap_id 
-            WHERE 
+            WHERE {where_clause}
+            ORDER BY wi.id DESC
+            LIMIT 200;
         """
-        if not any([mio_id, rm_id, depot_id, da_id]):
-            return Response({"detail": "Please provide at least one ID (mio_id, rm_id, depot_id, or da_id)."}, status=status.HTTP_400_BAD_REQUEST)
-        if not stat:
-            return Response({"detail": "Please provide a valid status."}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # filter based on mio, rm, depot , da id
-        filter1=""
-        params = []
-        filters = {}
-        if mio_id:
-            filters['mio_id'] = mio_id
-        if rm_id:
-            filters['rm_id'] = rm_id
-        if depot_id:
-            filters['depot_id'] = depot_id
-        if da_id:
-            filters['da_id'] = da_id
-        for key, value in filters.items():
-            filter1 += f" wi.{key} = %s AND"
-            params.append(value)
-        
-        filter1 = filter1[:-4]  # Remove the last 'AND'
-        
-        main_info_query += filter1
-        
-        # Filtering based on status
-        if stat == 'all':
-            pass
-        elif stat == 'request_pending':
-            main_info_query += " AND wi.request_approval = 0"
-        elif stat == 'request_approved':
-            main_info_query += " AND wi.request_approval = 1"
-        else:
-            return Response({"detail": "Invalid status provided."}, status=status.HTTP_400_BAD_REQUEST)
-        
-        main_info_query += ";"
-        
+        print(
+            f"main_info_query: {main_info_query}",
+        )       
         # Execute the query
         try:
             with connection.cursor() as cursor:
                 cursor.execute(main_info_query, params)
-                data = cursor.fetchall()
+                columns = [col[0] for col in cursor.description]
+                rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
         except Exception as e:
             logger.error(f"Error executing query: {e}")
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-        main_info = {
-            "id": data[0][0],
-            "invoice_no": data[0][1],
-            "invoice_type": data[0][23],
-            "mio_id": data[0][2],
-            "mio_name": data[0][24],
-            "mio_mobile": data[0][25],
-            "rm_id": data[0][3],
-            "rm_name": data[0][26],
-            "rm_mobile": data[0][27],
-            "da_id": data[0][4],
-            "da_name": data[0][34],
-            "da_mobile": data[0][35],
-            "depot_id": data[0][5],
-            "depot_name": data[0][32],
-            "route_id": data[0][6],
-            "route_name": data[0][33],
-            "partner_id": data[0][7],
-            "partner_name": data[0][28],
-            "customer_name": data[0][29],
-            "customer_number": data[0][30],
-            "customer_address": data[0][31],
-            "request_approval": data[0][8],
-            "withdrawal_confirmation": data[0][9],
-            "replacement_order": data[0][10],
-            "order_approval": data[0][11],
-            "order_delivery": data[0][12],
-            "request_date": data[0][13],
-            "request_approval_date": data[0][14],
-            "withdrawal_date": data[0][15],
-            "withdrawal_approval_date": data[0][16],
-            "order_date": data[0][17],
-            "order_approval_date": data[0][18],
-            "delivery_date": data[0][19],
-            "last_status": data[0][20],    
-        }
+        if not rows:
+            return Response({"success": True, "data": []})
         
-        # Fetching material list
+        # Get all invoice IDs to fetch material list
+        invoice_ids = [row['id'] for row in rows]     
+        
+        # Fetching material list query
         material_list_query = """
-        SELECT rl.*, m.material_name, m.producer_company, m.unit_tp, m.unit_vat 
+        SELECT rl.invoice_id_id AS invoice_id, rl.matnr, rl.batch, rl.pack_qty, rl.strip_qty, rl.unit_qty, rl.net_val, rl.expire_date, m.material_name, m.producer_company, m.unit_tp, m.unit_vat 
         FROM expr_request_list AS rl 
         INNER JOIN rpl_material AS m ON rl.matnr = m.matnr
-        WHERE rl.invoice_id_id = %s;
+        WHERE rl.invoice_id_id IN %s;
         """
         
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute(material_list_query, [main_info['id']])
-                material_list = cursor.fetchall()
-        except Exception as e:
-            logger.error(f"Error executing query: {e}")
-            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        request_list = []
-        for material in material_list:
-            request_list.append({
-                "matnr": material[1],
-                "material_name": material[11],
-                "producer_company": material[12],
-                "batch": material[2],
-                "pack_qty": material[3],
-                "strip_qty": material[4],
-                "unit_qty": material[5],
-                "net_val": material[6],
-                "unit_tp": material[13],
-                "unit_vat": material[14],
-                "expire_date": material[10],
+        if invoice_ids:
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute(material_list_query,[tuple(invoice_ids)])
+                    material_rows = cursor.fetchall()
+                    material_columns = [col[0] for col in cursor.description]
+                    materials = [dict(zip(material_columns, row)) for row in material_rows]   
+            except Exception as e:
+                logger.error(f"Error executing query: {e}")
+                return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+        # Group materials by invoice_id
+        material_map = defaultdict(list)
+        for mat in materials:
+            material_map[mat['invoice_id']].append({
+                "matnr": mat['matnr'],
+                "material_name": mat['material_name'],
+                "producer_company": mat['producer_company'],
+                "batch": mat['batch'],
+                "pack_qty": mat['pack_qty'],
+                "strip_qty": mat['strip_qty'],
+                "unit_qty": mat['unit_qty'],
+                "net_val": mat['net_val'],
+                "unit_tp": mat['unit_tp'],
+                "unit_vat": mat['unit_vat'],
+                "expire_date": mat['expire_date'],
             })
-        
-        # merger main_info and request_list
-        main_info['request_list'] = request_list
-        
-        logger.info(f"Approval list fetched successfully for {mio_id}, {rm_id}, {depot_id}, {da_id}, {stat}")
-        return Response({"success":True, "data": main_info}, status=status.HTTP_200_OK)
+                                    
+        # Attach materials to each row
+        for row in rows:
+            row['request_list'] = material_map.get(row['id'], [])
+
+        logger.info(f"Fetched {len(rows)} withdrawal requests")
+        return Response({"success": True, "data": rows}, status=status.HTTP_200_OK)
     
     
 class RequestApproveView(APIView):
