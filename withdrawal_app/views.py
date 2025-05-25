@@ -420,4 +420,38 @@ class WithdrawalConfirmationView(APIView):
         withdrawal_request.save()
         return Response({"detail": "Withdrawal request confirmed successfully."}, status=status.HTTP_200_OK)
     
-    
+class WithdrawalRequestUpdateView(APIView):
+    @extend_schema(request=WithdrawalRequestSerializer) # for drf-spectacular documentation
+    def put(self, request, invoice_no):
+        """
+        Update an existing withdrawal request.
+        Allows modifying the list: add , update or remove items.
+        
+        Args:
+            request (Request): The HTTP request object.
+            invoice_no (str): The invoice number of the withdrawal request to update.
+        Returns:
+            Response: A response object containing the updated withdrawal request data.
+        """
+        
+        invoice_no = invoice_no
+        instance = get_object_or_404(WithdrawalInfo, invoice_no=invoice_no)
+        
+        data = request.data.copy()
+        
+        # Ensure invoice type is valid
+        if data['invoice_type'] == 'Expired':
+            data['invoice_type'] = 'EXP'
+        elif data['invoice_type'] == 'General':
+            data['invoice_type'] = 'GEN'
+        else:
+            logger.error("Invalid invoice type provided. %s", invoice_no)
+            return Response({'success':False,"detail": "Invalid invoice type"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = WithdrawalRequestSerializer(instance, data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            logger.info("Withdrawal request updated successfully for MIO %s", invoice_no)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        logger.error(f"Error updating withdrawal request {invoice_no} : {serializer.errors}")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
