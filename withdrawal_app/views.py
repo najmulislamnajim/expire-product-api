@@ -423,7 +423,7 @@ class WithdrawalConfirmationView(APIView):
     
 class WithdrawalRequestUpdateView(APIView):
     @extend_schema(request=WithdrawalRequestSerializer) # for drf-spectacular documentation
-    def put(self, request, invoice_no):
+    def put(self, request):
         """
         Update an existing withdrawal request.
         Allows modifying the list: add , update or remove items.
@@ -435,15 +435,16 @@ class WithdrawalRequestUpdateView(APIView):
             Response: A response object containing the updated withdrawal request data.
         """
         
-        invoice_no = invoice_no
+        data = request.data.copy()
+        invoice_no = data.get('invoice_no')
+        
         instance = get_object_or_404(WithdrawalInfo, invoice_no=invoice_no)
         
-        data = request.data.copy()
         
         # Ensure invoice type is valid
-        if data['invoice_type'] == 'Expired':
+        if data['invoice_type'] in ['EXP', 'Expired']:
             data['invoice_type'] = 'EXP'
-        elif data['invoice_type'] == 'General':
+        elif data['invoice_type'] in ['GEN', 'General']:
             data['invoice_type'] = 'GEN'
         else:
             logger.error("Invalid invoice type provided. %s", invoice_no)
