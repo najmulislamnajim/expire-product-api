@@ -454,6 +454,6 @@ class WithdrawalRequestUpdateView(APIView):
         if serializer.is_valid():
             serializer.save()
             logger.info("Withdrawal request updated successfully for MIO %s", invoice_no)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({'success':True,'detail':'Withdrawal request updated successfully','data':serializer.data}, status=status.HTTP_200_OK)
         logger.error(f"Error updating withdrawal request {invoice_no} : {serializer.errors}")
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
+        return Response({'success':False,"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)    
