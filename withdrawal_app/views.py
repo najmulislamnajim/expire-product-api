@@ -263,7 +263,7 @@ class DaAssignView(APIView):
     """
     serializer_class = DaAssignSerializer
     @extend_schema(request=DaAssignSerializer)
-    def put(self, request, invoice_no):
+    def put(self, request):
         """
         Assign a delivery agent to a withdrawal request.
         
@@ -274,12 +274,15 @@ class DaAssignView(APIView):
         Returns:
             Response: A response object containing the assignment status.
         """
+        invoice_no = request.data.get('invoice_no')
         withdrawal_request = get_object_or_404(WithdrawalInfo, invoice_no=invoice_no)
         serializer = DaAssignSerializer(withdrawal_request, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"detail": "Delivery agent assigned successfully."}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            logger.info(f"Delivery agent assigned to withdrawal request {invoice_no}")
+            return Response({"success":True,"detail": "Delivery agent assigned successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
+        logger.error(f"Error assigning delivery agent to withdrawal request {invoice_no}: {serializer.errors}")
+        return Response({"success":False,"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
     
     
 class WithdrawalSaveView(APIView):
