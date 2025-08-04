@@ -79,9 +79,13 @@ class WithdrawalRequestList(models.Model):
     batch = models.CharField(max_length=40)
     pack_qty = models.IntegerField(default=0)
     strip_qty = models.IntegerField(default=0)
-    unit_qty = models.IntegerField(default=0)
+    unit_qty = models.IntegerField(default=0) #Tab/Cap/Amp
     net_val = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     expire_date = models.DateField(null=True, blank=True)
+    rel_invoice_no = models.CharField(max_length=20, blank=True, null=True)
+    rel_invoice_date = models.DateField(blank=True, null=True)
+    rel_mio_name = models.CharField(max_length=155, blank=True, null=True)
+    rel_mio_phone = models.CharField(max_length=15, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
