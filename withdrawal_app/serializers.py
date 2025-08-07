@@ -32,10 +32,15 @@ class WithdrawalListSerializer(serializers.ModelSerializer):
         read_only_fields = ['invoice_id'] 
         
     def create(self, validated_data):
-        # Get the invoice_no from the context
         invoice_no = self.context.get('invoice_no')
-        validated_data['invoice_no'] = invoice_no  # Add the invoice_no to validated_data
+        try:
+            invoice_instance = WithdrawalInfo.objects.get(invoice_no=invoice_no)
+        except WithdrawalInfo.DoesNotExist:
+            raise serializers.ValidationError("Invalid invoice_no passed in context.")
+        
+        validated_data['invoice_id'] = invoice_instance
         return WithdrawalList.objects.create(**validated_data)
+
 
 class WithdrawalRequestSerializer(serializers.ModelSerializer):
     """
