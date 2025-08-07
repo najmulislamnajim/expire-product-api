@@ -10,6 +10,7 @@ from withdrawal_app.serializers import WithdrawalRequestSerializer, WithdrawalSe
 from withdrawal_app.models import WithdrawalInfo
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, OpenApiTypes
 from collections import defaultdict
+from .utils import paginate
 
 # Set logger
 logger = logging.getLogger("withdrawal_app")
@@ -109,9 +110,9 @@ class WithdrawalRequestListView(APIView):
         
         # Validate inputs 
         if not any([mio_id, rm_id, depot_id, da_id]):
-            return Response({"detail": "Please provide at least one ID (mio_id, rm_id, depot_id, or da_id)."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success":False,"message": "Please provide at least one ID (mio_id, rm_id, depot_id, or da_id)."}, status=status.HTTP_400_BAD_REQUEST)
         if status_filter not in ['all', 'request_pending', 'request_approved']:
-            return Response({"detail": "Please provide a valid status.[all, request_pending, request_approved]"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success":False,"message": "Please provide a valid status.[all, request_pending, request_approved]"}, status=status.HTTP_400_BAD_REQUEST)
                
         # filter based on mio, rm, depot , da id
         params = []
@@ -137,7 +138,7 @@ class WithdrawalRequestListView(APIView):
             
         # Verify if filters are present
         if not filters:
-            return Response({"detail": "At least one filter is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success":False,"detail": "At least one filter is required."}, status=status.HTTP_400_BAD_REQUEST)
         # where  clause
         where_clause = " AND ".join(filters)
         
@@ -180,10 +181,10 @@ class WithdrawalRequestListView(APIView):
                 rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
         except Exception as e:
             logger.error(f"Error executing query: {e}")
-            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"success":False,"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         if not rows:
-            return Response({"success": True, "data": []})
+            return Response({"success": True,"message":"No Items Found!", "data": []})
         
         # Get all invoice IDs to fetch material list
         invoice_ids = [row['id'] for row in rows]     
@@ -205,7 +206,7 @@ class WithdrawalRequestListView(APIView):
                     materials = [dict(zip(material_columns, row)) for row in material_rows]   
             except Exception as e:
                 logger.error(f"Error executing query: {e}")
-                return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response({"success":False,"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 
         # Group materials by invoice_id
         material_map = defaultdict(list)
@@ -228,9 +229,19 @@ class WithdrawalRequestListView(APIView):
         # Attach materials to each row
         for row in rows:
             row['request_list'] = material_map.get(row['id'], [])
-
+            
+        # pagination
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('per_page', 10))
+        if page <= 0 or page_size <= 0:
+            return Response({
+                "success": False,
+                "message": "Invalid 'page' or 'per_page'. Must be positive integers."
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        paginate_results= paginate(rows,page=page,per_page=page_size)
         logger.info(f"Fetched {len(rows)} withdrawal requests")
-        return Response({"success": True, "data": rows}, status=status.HTTP_200_OK)
+        return Response(paginate_results, status=status.HTTP_200_OK)
     
     
 class RequestApproveView(APIView):
