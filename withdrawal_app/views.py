@@ -10,7 +10,7 @@ from withdrawal_app.serializers import WithdrawalRequestSerializer, WithdrawalSe
 from withdrawal_app.models import WithdrawalInfo
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, OpenApiTypes
 from collections import defaultdict
-from .utils import paginate
+from .utils import paginate, mtnr_unit_price
 
 # Set logger
 logger = logging.getLogger("withdrawal_app")
@@ -193,7 +193,7 @@ class WithdrawalRequestListView(APIView):
         
         # Fetching material list query
         material_list_query = """
-        SELECT rl.id AS list_id, rl.invoice_id_id AS invoice_id, rl.matnr, rl.batch, rl.pack_qty, rl.strip_qty, rl.unit_qty, rl.net_val, rl.expire_date, m.material_name, m.producer_company, m.unit_tp, m.unit_vat 
+        SELECT rl.id AS list_id, rl.invoice_id_id AS invoice_id, rl.matnr, rl.batch, rl.pack_qty, rl.strip_qty, rl.unit_qty, rl.net_val, rl.expire_date, m.material_name, m.producer_company, m.unit_tp, m.unit_vat , m.pack_size 
         FROM expr_request_list AS rl 
         INNER JOIN rpl_material AS m ON rl.matnr = m.matnr
         WHERE rl.invoice_id_id IN %s;
@@ -226,6 +226,8 @@ class WithdrawalRequestListView(APIView):
                 "unit_tp": mat['unit_tp'],
                 "unit_vat": mat['unit_vat'],
                 "expire_date": mat['expire_date'],
+                "pack_price": mat['unit_tp']+mat['unit_vat'],
+                "unit_price": mtnr_unit_price(mat['pack_size'], mat['unit_tp'], mat['unit_vat'])
             })
                                     
         # Attach materials to each row

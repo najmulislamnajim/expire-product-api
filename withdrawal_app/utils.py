@@ -19,3 +19,17 @@ def paginate(data,success=True,message="All items get successfully.", page=1, pe
             "previous_page": page - 1 if start_index > 0 else None,
         }
     }
+    
+def mtnr_unit_price(pack_size, unit_tp, unit_vat):
+    clean = pack_size.replace("'", "").replace("s", "").lower().replace(" ", "")
+    if "x" in clean:
+        parts = clean.split("x")
+        pack_strip = int(parts[0])
+        strip_unit = int(parts[1])
+        unit_per_pack = pack_strip * strip_unit
+    else:
+        unit_per_pack = int(clean)
+
+    unit_price = (float(unit_tp) + float(unit_vat)) / unit_per_pack
+    return unit_price
+
