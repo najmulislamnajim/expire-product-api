@@ -320,12 +320,12 @@ class WithdrawalSaveView(APIView):
         try:
             info = WithdrawalInfo.objects.get(invoice_no=invoice_no)
         except WithdrawalInfo.DoesNotExist:
-            return Response({"detail": "Withdrawal request does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"success":False,"message": "Withdrawal request does not exist"}, status=status.HTTP_404_NOT_FOUND)
         # Get DA id for logging
         da_id = info.da_id
         # Update the withdrawal_date and save
         info.withdrawal_date = date.today()
-        info.save()
+        info.last_status = info.Status.WITHDRAWAL_APPROVAL
         
         # Get the withdrawal items
         data = request.data
@@ -333,11 +333,12 @@ class WithdrawalSaveView(APIView):
         # Validate and save
         serializer = WithdrawalListSerializer(data=data, many=True, context={'invoice_no': info.invoice_no})
         if serializer.is_valid():
+            info.save()
             serializer.save()
             logger.info("Withdrawal successfully created for DA %s", da_id)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response({"success":True,"message":"Items Save Successfully.","data":serializer.data}, status=status.HTTP_201_CREATED)
         logger.error(f"Error creating withdrawal {da_id} : {serializer.errors}")
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"success":False, "message":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
     
 class WithdrawalListView(APIView):
     """
