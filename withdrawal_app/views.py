@@ -111,8 +111,8 @@ class WithdrawalRequestListView(APIView):
         # Validate inputs 
         if not any([mio_id, rm_id, depot_id, da_id]):
             return Response({"success":False,"message": "Please provide at least one ID (mio_id, rm_id, depot_id, or da_id)."}, status=status.HTTP_400_BAD_REQUEST)
-        if status_filter not in ['all', 'request_pending', 'request_approved']:
-            return Response({"success":False,"message": "Please provide a valid status.[all, request_pending, request_approved]"}, status=status.HTTP_400_BAD_REQUEST)
+        if status_filter not in ['all', 'request_pending', 'request_approved', 'withdrawal_pending']:
+            return Response({"success":False,"message": "Please provide a valid status.[all, request_pending, request_approved, withdrawal_pending]"}, status=status.HTTP_400_BAD_REQUEST)
                
         # filter based on mio, rm, depot , da id
         params = []
@@ -132,9 +132,11 @@ class WithdrawalRequestListView(APIView):
         
         # Filtering based on status
         if status_filter == 'request_pending':
-            filters.append("wi.request_approval = 0")
+            filters.append("wi.last_status = 'request_pending'")
         elif status_filter == 'request_approved':
-            filters.append("wi.request_approval = 1")
+            filters.append("wi.last_status = 'request_approved'")
+        elif status_filter == 'withdrawal_pending':
+            filters.append("wi.last_status= 'withdrawal_pending'")
             
         # Verify if filters are present
         if not filters:
