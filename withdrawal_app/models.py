@@ -11,9 +11,10 @@ class WithdrawalInfo(models.Model):
     instance ID.
     """
     class Status(models.TextChoices):
-        REQUEST = 'request', 'Request'
+        REQUEST_PENDING = 'request_pending', 'Request Pending'
         REQUEST_APPROVED = 'request_approved', 'Request Approved'
-        WITHDRAWAL = 'withdrawal', 'Withdrawal'
+        WITHDRAWAL_PENDING = 'withdrawal_pending', 'Withdrawal Pending'
+        WITHDRAWAL_APPROVAL = 'withdrawal_approval', 'Withdrawal Approval'
         WITHDRAWAL_APPROVED = 'withdrawal_approved', 'Withdrawal Approved'
         DELIVERY = 'delivery', 'Delivery'
     class InvoiceType(models.TextChoices):
@@ -40,7 +41,7 @@ class WithdrawalInfo(models.Model):
     order_date = models.DateField(null=True, blank=True) 
     order_approval_date = models.DateField(null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
-    last_status = models.CharField(max_length=40, choices=Status.choices, default=Status.REQUEST)
+    last_status = models.CharField(max_length=40, choices=Status.choices, default=Status.REQUEST_PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
