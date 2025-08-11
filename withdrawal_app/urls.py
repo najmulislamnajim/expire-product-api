@@ -10,4 +10,5 @@ urlpatterns = [
     path('assign-da', withdrawal_views.DaAssignView.as_view(), name='da_assign'),
     path('save/<str:invoice_no>',withdrawal_views.WithdrawalSaveView.as_view(), name='withdrawal_save'),
     path('confirmation', withdrawal_views.WithdrawalConfirmationView.as_view(), name='withdrawal_confirmation'),
+    path('final_list', withdrawal_views.WithdrawalInfoFinalListView.as_view(), name='withdrawal_approval'),
 ]
