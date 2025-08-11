@@ -423,7 +423,7 @@ class WithdrawalConfirmationView(APIView):
     View to confirm a withdrawal request.
     """
     schema = None  # Disable schema generation
-    def put(self, request, invoice_no):
+    def put(self, request):
         """
         Confirm a withdrawal request.
         
@@ -434,11 +434,13 @@ class WithdrawalConfirmationView(APIView):
         Returns:
             Response: A response object containing the confirmation status.
         """
+        invoice_no = request.data.get('invoice_no')
         withdrawal_request = get_object_or_404(WithdrawalInfo, invoice_no=invoice_no)
         withdrawal_request.withdrawal_confirmation = True
         withdrawal_request.withdrawal_approval_date = date.today()
+        withdrawal_request.last_status = 'withdrawal_approved'
         withdrawal_request.save()
-        return Response({"detail": "Withdrawal request confirmed successfully."}, status=status.HTTP_200_OK)
+        return Response({"success":True,"message": "Withdrawal request confirmed successfully.","data":{"invoice_no": invoice_no}}, status=status.HTTP_200_OK)
     
 class WithdrawalRequestUpdateView(APIView):
     @extend_schema(request=WithdrawalRequestSerializer) # for drf-spectacular documentation

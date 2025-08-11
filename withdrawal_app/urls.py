@@ -9,5 +9,5 @@ urlpatterns = [
     path('request/approve/<str:invoice_no>', withdrawal_views.RequestApproveView.as_view(), name='request_approve'),
     path('assign-da', withdrawal_views.DaAssignView.as_view(), name='da_assign'),
     path('save/<str:invoice_no>',withdrawal_views.WithdrawalSaveView.as_view(), name='withdrawal_save'),
-    path('confirm/<str:invoice_no>', withdrawal_views.WithdrawalConfirmationView.as_view(), name='withdrawal_confirmation'),
+    path('confirmation', withdrawal_views.WithdrawalConfirmationView.as_view(), name='withdrawal_confirmation'),
 ]
