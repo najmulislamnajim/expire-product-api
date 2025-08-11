@@ -382,9 +382,9 @@ class WithdrawalListView(APIView):
         serializer_class = WithdrawalSerializer # for  schema generation tools
          
         if not any([mio_id, rm_id, depot_id, da_id]):
-            return Response({"detail": "Please provide at least one ID (mio_id, rm_id, depot_id, or da_id)."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success":False,"message": "Please provide at least one ID (mio_id, rm_id, depot_id, or da_id)."}, status=status.HTTP_400_BAD_REQUEST)
         if not stat:
-            return Response({"detail": "Please provide a valid status."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"success":False,"message": "Please provide a valid status."}, status=status.HTTP_404_NOT_FOUND)
 
         # Filtering based on provided parameters
         if mio_id:
@@ -410,17 +410,17 @@ class WithdrawalListView(APIView):
         elif stat == 'all':
             queryset = queryset 
         else:
-            return Response({"detail": "Please provide a valid status."}, status=status.HTTP_404_NOT_FOUND)           
+            return Response({"success":False,"message": "Please provide a valid status."}, status=status.HTTP_404_NOT_FOUND)           
 
         # Ensure we return a meaningful response
         if not queryset.exists():
             logger.error(f"No matching records found. {mio_id}, {rm_id}, {depot_id}, {da_id}, {status}")
-            return Response({"detail": "No matching records found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"success":False,"message": "No matching records found."}, status=status.HTTP_404_NOT_FOUND)
         
         # Serialize the queryset and return it as a response
         serializer = WithdrawalSerializer(queryset, many=True)
         logger.info(f"Approval list fetched successfully for {mio_id}, {rm_id}, {depot_id}, {da_id}, {status}")
-        return Response(serializer.data, status=status.HTTP_200_OK)    
+        return Response({"success":True,"message": "Approval list fetched successfully.","data":serializer.data}, status=status.HTTP_200_OK)    
     
 class WithdrawalConfirmationView(APIView):
     """
