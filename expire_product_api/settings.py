@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     # My Apps
     'material_app',
     'withdrawal_app',
+    'replacement_app',
 ]
 
 MIDDLEWARE = [
