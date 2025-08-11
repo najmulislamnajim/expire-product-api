@@ -111,7 +111,7 @@ class WithdrawalRequestListView(APIView):
         # Validate inputs 
         if not any([mio_id, rm_id, depot_id, da_id]):
             return Response({"success":False,"message": "Please provide at least one ID (mio_id, rm_id, depot_id, or da_id)."}, status=status.HTTP_400_BAD_REQUEST)
-        if status_filter not in ['all', 'request_pending', 'request_approved', 'withdrawal_pending']:
+        if status_filter not in ['all', 'request_pending', 'request_approved', 'withdrawal_pending', 'withdrawal_approval', 'withdrawal_approved']:
             return Response({"success":False,"message": "Please provide a valid status.[all, request_pending, request_approved, withdrawal_pending]"}, status=status.HTTP_400_BAD_REQUEST)
                
         # filter based on mio, rm, depot , da id
@@ -137,10 +137,14 @@ class WithdrawalRequestListView(APIView):
             filters.append("wi.last_status = 'request_approved'")
         elif status_filter == 'withdrawal_pending':
             filters.append("wi.last_status= 'withdrawal_pending'")
+        elif status_filter == 'withdrawal_approval':
+            filters.append("wi.last_status= 'withdrawal_approval'")
+        elif status_filter == 'withdrawal_approved':
+            filters.append("wi.last_status= 'withdrawal_approved'")
             
         # Verify if filters are present
         if not filters:
-            return Response({"success":False,"detail": "At least one filter is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success":False,"message": "At least one filter is required."}, status=status.HTTP_400_BAD_REQUEST)
         # where  clause
         where_clause = " AND ".join(filters)
         
