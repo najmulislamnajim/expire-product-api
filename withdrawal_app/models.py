@@ -16,7 +16,10 @@ class WithdrawalInfo(models.Model):
         WITHDRAWAL_PENDING = 'withdrawal_pending', 'Withdrawal Pending'
         WITHDRAWAL_APPROVAL = 'withdrawal_approval', 'Withdrawal Approval'
         WITHDRAWAL_APPROVED = 'withdrawal_approved', 'Withdrawal Approved'
-        DELIVERY = 'delivery', 'Delivery'
+        REPLACEMENT_APPROVAL = 'replacement_approval', 'Replacement Approval'
+        REPLACEMENT_APPROVED = 'replacement_approved', 'Replacement Approved'
+        DELIVERY_PENDING = 'delivery_pending', 'Delivery Pending'
+        DELIVERED = 'delivered', 'Delivered'
     class InvoiceType(models.TextChoices):
         EXPIRED = 'EXP', 'Expired'
         GENERAL = 'GEN', 'General'
