@@ -189,7 +189,22 @@ class WithdrawalRequestListView(APIView):
             return Response({"success":False,"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         if not rows:
-            return Response({"success": True,"message":"No Items Found!", "data": []})
+            return Response(
+                {
+                    "success": True,
+                    "message":"No Items Found!", 
+                    "data": [],
+                    "pagination": {
+                        "current_page": 1,
+                        "per_page": 10,
+                        "total_items": 0,
+                        "total_pages": 1,
+                        "next_page": None,
+                        "previous_page": None
+                    }
+                },
+                status=status.HTTP_200_OK
+            )
         
         # Get all invoice IDs to fetch material list
         invoice_ids = [row['id'] for row in rows]     
