@@ -527,7 +527,7 @@ class WithdrawalInfoFinalListView(APIView):
             params.append(da_id)
         
         if stat == 'withdrawal_approval':
-            filters.append("wi.last_status = 'withdrawal_pending'")
+            filters.append("wi.last_status = 'withdrawal_approval'")
         elif stat == 'withdrawal_approved':
             filters.append("wi.last_status = 'withdrawal_approved'")
         
@@ -587,7 +587,7 @@ class WithdrawalInfoFinalListView(APIView):
         with connection.cursor() as cursor:
             cursor.execute(sql, params)
             if cursor.description is None:
-                return Response({"success":True,"message": "No data found.", "data":[] }, status=status.HTTP_200_OK)
+                return Response(paginate([],message="No data found.", page=1, per_page=10), status=status.HTTP_200_OK)
             columns = [col[0] for col in cursor.description]
             rows = cursor.fetchall()
 
@@ -602,7 +602,7 @@ class WithdrawalInfoFinalListView(APIView):
         })
         
         if not rows:
-            return Response({"success":True,"message": "No data found.", "data":[] }, status=status.HTTP_200_OK)
+            return Response(paginate([],message="No data found.", page=1, per_page=10), status=status.HTTP_200_OK)
 
         for row in rows:
             row_dict = dict(zip(columns, row))
