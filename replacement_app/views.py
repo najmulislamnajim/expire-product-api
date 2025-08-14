@@ -3,8 +3,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from withdrawal_app.models import WithdrawalInfo
-from .serializers import AvailableReplacementListSerializer
+from .serializers import AvailableReplacementListSerializer, ReplacementListSerializer
 from withdrawal_app.utils import paginate
+from .models import ReplacementList
 
 # Create your views here.
 class AvailableReplacementListView(APIView):
@@ -29,3 +30,39 @@ class AvailableReplacementListView(APIView):
             return Response(results, status=status.HTTP_200_OK)
         else:
             return Response(paginate([], message="No available replacements found."), status=status.HTTP_404_NOT_FOUND)
+
+class ReplacementListCreateAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        invoice_no = request.data.get('invoice_no')
+        materials = request.data.get('materials', [])
+
+        if not invoice_no or not materials:
+            return Response(
+                {"success":False,"message": "Both 'invoice' and 'materials' are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            invoice = WithdrawalInfo.objects.get(invoice_no=invoice_no)
+        except WithdrawalInfo.DoesNotExist:
+            return Response(
+                {"success":False,"message": "Invoice not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = ReplacementListSerializer(data=materials, many=True)
+        if serializer.is_valid():
+            replacement_objects = [
+                ReplacementList(invoice=invoice, **item)
+                for item in serializer.validated_data
+            ]
+            ReplacementList.objects.bulk_create(replacement_objects)
+            invoice.last_status=invoice.Status.REPLACEMENT_APPROVAL
+            invoice.replacement_order=True
+            invoice.save()
+
+            return Response(
+                {"success":True,"message": "Replacement list created successfully","data":serializer.data},
+                status=status.HTTP_201_CREATED
+            )
+        return Response({"success":False,"message":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
