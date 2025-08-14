@@ -6,6 +6,7 @@ from withdrawal_app.models import WithdrawalInfo
 from .serializers import AvailableReplacementListSerializer, ReplacementListSerializer
 from withdrawal_app.utils import paginate
 from .models import ReplacementList
+from datetime import date
 
 # Create your views here.
 class AvailableReplacementListView(APIView):
@@ -66,3 +67,16 @@ class ReplacementListCreateAPIView(APIView):
                 status=status.HTTP_201_CREATED
             )
         return Response({"success":False,"message":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    
+class ReplacementApproveView(APIView):
+    def put(self, request):
+        invoice_no = request.data.get("invoice_no")
+        try:
+            withdrawal_info = WithdrawalInfo.objects.get(invoice_no= invoice_no)
+            withdrawal_info.order_approval = True
+            withdrawal_info.last_status = withdrawal_info.Status.REPLACEMENT_APPROVED
+            withdrawal_info.order_approval_date = date.today()
+            withdrawal_info.save()
+            return Response({"success":True, "message":"Successfully approved", "data":invoice_no}, status=status.HTTP_200_OK)
+        except WithdrawalInfo.DoesNotExist:
+            return Response({"success":False, "message":"invoice not found!"}, status=status.HTTP_404_NOT_FOUND)
