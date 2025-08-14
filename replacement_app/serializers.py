@@ -15,3 +15,9 @@ class ReplacementListSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReplacementList
         fields = ['matnr', 'batch', 'pack_qty', 'unit_qty', 'net_val']
+
+class ReplacementApprovalListSerializer(serializers.ModelSerializer):
+    replacement_list = ReplacementListSerializer(many=True, read_only=True)
+    class Meta:
+        model = WithdrawalInfo
+        fields = '__all__'

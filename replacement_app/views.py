@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from withdrawal_app.models import WithdrawalInfo
-from .serializers import AvailableReplacementListSerializer, ReplacementListSerializer
+from .serializers import AvailableReplacementListSerializer, ReplacementListSerializer, ReplacementApprovalListSerializer
 from withdrawal_app.utils import paginate
 from .models import ReplacementList
 from datetime import date
@@ -68,6 +68,26 @@ class ReplacementListCreateAPIView(APIView):
                 status=status.HTTP_201_CREATED
             )
         return Response({"success":False,"message":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    
+class ReplacementApprovalListView(APIView):
+    def get(self, request):
+        rm_id = request.query_params.get("rm_id")
+        if not rm_id:
+            return Response({"success":False, "message":"You Must need to pass rm id."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        withdrawal_info = WithdrawalInfo.objects.filter(rm_id=rm_id, last_status=WithdrawalInfo.Status.REPLACEMENT_APPROVAL)
+        if withdrawal_info.exists():
+            serializer = ReplacementApprovalListSerializer(withdrawal_info, many=True)
+            page = int(request.query_params.get('page', 1))
+            per_page = int(request.query_params.get('per_page', 10))
+            if page <= 0 or per_page <= 0:
+                return Response({"success":False,"message": "Invalid page or per_page parameters."}, status=status.HTTP_400_BAD_REQUEST)
+            results = paginate(serializer.data, page=page, per_page=per_page)
+            return Response(results, status=status.HTTP_200_OK)
+        else:
+            return Response(paginate([], message="No available replacements found."), status=status.HTTP_404_NOT_FOUND)
+        
+        
     
 class ReplacementApproveView(APIView):
     def put(self, request):
