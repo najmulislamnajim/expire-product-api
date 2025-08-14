@@ -60,6 +60,7 @@ class ReplacementListCreateAPIView(APIView):
             ReplacementList.objects.bulk_create(replacement_objects)
             invoice.last_status=invoice.Status.REPLACEMENT_APPROVAL
             invoice.replacement_order=True
+            invoice.order_date = date.today()
             invoice.save()
 
             return Response(
