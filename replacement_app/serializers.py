@@ -18,6 +18,7 @@ class AvailableReplacementListSerializer(serializers.ModelSerializer):
     )
     request_list = RequestListSerializer(many=True, read_only = True)
     withdrawal_list = WithdrawalListSerializer(many=True, read_only = True)
+    partner_name = serializers.CharField(default="")
     class Meta:
         model = WithdrawalInfo
         fields = '__all__'
