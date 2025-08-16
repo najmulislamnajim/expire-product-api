@@ -1,15 +1,27 @@
 from rest_framework import serializers
-from withdrawal_app.models import WithdrawalInfo
+from withdrawal_app.models import WithdrawalInfo, WithdrawalRequestList, WithdrawalList
 from .models import ReplacementList
+
+class RequestListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WithdrawalRequestList
+        fields = '__all__'
+        
+class WithdrawalListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WithdrawalList
+        fields = '__all__'
 
 class AvailableReplacementListSerializer(serializers.ModelSerializer):
     total_amount = serializers.DecimalField(
         max_digits=12, decimal_places=2, read_only=True
     )
+    request_list = RequestListSerializer(many=True, read_only = True)
+    withdrawal_list = WithdrawalListSerializer(many=True, read_only = True)
     class Meta:
         model = WithdrawalInfo
         fields = '__all__'
-        read_only_fields = ['total_amount']
+        read_only_fields = ['total_amount']  
 
 class ReplacementListSerializer(serializers.ModelSerializer):
     class Meta:
