@@ -6,4 +6,5 @@ urlpatterns = [
     path('create', replacement_views.ReplacementListCreateAPIView.as_view(), name="replacement_create"),
     path('approve', replacement_views.ReplacementApproveView.as_view(), name="replacement approve"),
     path('approval_list', replacement_views.ReplacementApprovalListView.as_view(), name="replacement_approval_list"),
+    path('request/list', replacement_views.ReplacementOrderRequestList.as_view(), name='replacement_request_list'),
 ]

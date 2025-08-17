@@ -1,4 +1,5 @@
 from django.db.models import Sum
+from django.db import connection
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -7,7 +8,7 @@ from .serializers import AvailableReplacementListSerializer, ReplacementListSeri
 from withdrawal_app.utils import paginate
 from .models import ReplacementList
 from datetime import date
-
+from collections import defaultdict
 # Create your views here.
 class AvailableReplacementListView(APIView):
     def get(self, request):
@@ -101,3 +102,105 @@ class ReplacementApproveView(APIView):
             return Response({"success":True, "message":"Successfully approved", "data":invoice_no}, status=status.HTTP_200_OK)
         except WithdrawalInfo.DoesNotExist:
             return Response({"success":False, "message":"invoice not found!"}, status=status.HTTP_404_NOT_FOUND)
+        
+class ReplacementOrderRequestList(APIView):
+    def get(self, request):
+        mio_id = request.query_params.get('mio_id')
+        rm_id = request.query_params.get('rm_id')
+        depot_id = request.query_params.get('depot_id')
+        da_id = request.query_params.get('da_id')
+        # Validate inputs 
+        if not any([mio_id, rm_id, depot_id, da_id]):
+            return Response({"success":False,"message": "Please provide at least one ID (mio_id, rm_id, depot_id, or da_id)."}, status=status.HTTP_400_BAD_REQUEST)
+        params = []
+        filters = []
+        if mio_id:
+            filters.append("wi.mio_id = %s")
+            params.append(mio_id)
+        if rm_id:
+            filters.append("wi.rm_id = %s")
+            params.append(rm_id)
+        if depot_id:
+            filters.append("wi.depot_id = %s")
+            params.append(depot_id)
+        if da_id:
+            filters.append("wi.da_id = %s")
+            params.append(da_id)
+            
+        where_clause = " AND ".join(filters)
+        sql= f"""
+        SELECT
+            wi.invoice_no,
+            wi.mio_id,
+            wi.rm_id,
+            wi.depot_id,
+            wi.route_id,
+            r.route_name,
+            wi.partner_id,
+            CONCAT(c.name1, c.name2) AS partner_name,
+            CONCAT(c.street, c.street1, c.street2, c.upazilla, c.district) AS partner_address,
+            c.mobile_no AS partner_mobile_no,
+            c.contact_person,
+            wi.order_date,
+            wi.order_approval_date,
+            wi.delivery_da_id,
+            wi.last_status,
+            rl.matnr,
+            m.material_name,
+            rl.pack_qty,
+            rl.unit_qty,
+            rl.net_val
+        FROM expr_withdrawal_info wi 
+        INNER JOIN expr_replacement_list rl ON wi.id = rl.invoice_id
+        INNER JOIN rpl_customer c ON wi.partner_id = c.partner
+        INNER JOIN rpl_material m ON rl.matnr = m.matnr
+        INNER JOIN rdl_route_wise_depot r ON wi.route_id = r.route_code
+        WHERE {where_clause} AND wi.last_status='replacement_approved' AND wi.delivery_da_id is NULL;
+        """
+        with connection.cursor() as cursor:
+                cursor.execute(sql, params)
+                if cursor.description is None:
+                    return Response(paginate([],message="No data found.", page=1, per_page=10), status=status.HTTP_200_OK)
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+        # Column mapping
+        material_cols = ["matnr", "material_name", "batch", "pack_qty", "unit_qty","net_val"]
+        data_map = defaultdict(lambda: {
+            **{col: None for col in columns if col not in material_cols},
+            "materials": []
+        })
+        if not rows:
+            return Response(paginate([],message="No data found.", page=1, per_page=10), status=status.HTTP_200_OK)
+        for row in rows:
+            row_dict = dict(zip(columns, row))
+            invoice_no = row_dict["invoice_no"]
+
+            # Only set general invoice info once
+            if not data_map[invoice_no]["invoice_no"]:
+                for col in columns:
+                    if col not in material_cols:
+                        data_map[invoice_no][col] = row_dict[col]
+
+            # Append material info
+            data_map[invoice_no]["materials"].append({
+                "matnr": row_dict["matnr"],
+                "material_name": row_dict["material_name"],
+                # "batch": row_dict["batch"],
+                "pack_qty": row_dict["pack_qty"],
+                "unit_qty": row_dict["unit_qty"],
+                "net_val": row_dict["net_val"],
+            })
+
+        # Convert to list
+        data_list = list(data_map.values())
+
+        # pagination
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('per_page', 10))
+        if page <= 0 or page_size <= 0:
+            return Response({
+                "success": False,
+                "message": "Invalid 'page' or 'per_page'. Must be positive integers."
+            }, status=status.HTTP_400_BAD_REQUEST)
+        paginate_results= paginate(data_list,page=page,per_page=page_size)
+        return Response(paginate_results, status=status.HTTP_200_OK)
