@@ -33,6 +33,9 @@ class ReplacementListSerializer(serializers.ModelSerializer):
 
 class ReplacementApprovalListSerializer(serializers.ModelSerializer):
     replacement_list = ReplacementListSerializer(many=True, read_only=True)
+    partner_name = serializers.CharField(default="")
+    customer_address = serializers.CharField(default="")
+    mio_name = serializers.CharField(default="")
     class Meta:
         model = WithdrawalInfo
         fields = '__all__'
