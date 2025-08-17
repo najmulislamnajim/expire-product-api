@@ -43,6 +43,7 @@ class WithdrawalInfo(models.Model):
     withdrawal_approval_date = models.DateField(null=True, blank=True)
     order_date = models.DateField(null=True, blank=True) 
     order_approval_date = models.DateField(null=True, blank=True)
+    delivery_da_id = models.CharField(max_length=40, null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
     last_status = models.CharField(max_length=40, choices=Status.choices, default=Status.REQUEST_PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
