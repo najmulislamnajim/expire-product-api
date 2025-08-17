@@ -27,9 +27,10 @@ class AvailableReplacementListSerializer(serializers.ModelSerializer):
         read_only_fields = ['total_amount']  
 
 class ReplacementListSerializer(serializers.ModelSerializer):
+    material_name = serializers.CharField(max_length=150, default="")
     class Meta:
         model = ReplacementList
-        fields = ['matnr', 'batch', 'pack_qty', 'unit_qty', 'net_val']
+        fields = ['matnr', 'batch', 'pack_qty', 'unit_qty', 'net_val', 'material_name']
 
 class ReplacementApprovalListSerializer(serializers.ModelSerializer):
     replacement_list = ReplacementListSerializer(many=True, read_only=True)
