@@ -8,4 +8,5 @@ urlpatterns = [
     path('approval_list', replacement_views.ReplacementApprovalListView.as_view(), name="replacement_approval_list"),
     path('request/list', replacement_views.ReplacementOrderRequestList.as_view(), name='replacement_request_list'),
     path('assign_delivery_da', replacement_views.AssignDeliveryDA.as_view(), name='assign_delivery_da'),
+    path('delivery_pending_list', replacement_views.ReplacementDeliveryPendingList.as_view(), name='delivery_pending_list'),
 ]
