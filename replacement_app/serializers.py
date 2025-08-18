@@ -30,11 +30,13 @@ class AvailableReplacementListSerializer(serializers.ModelSerializer):
 class ReplacementListSerializer(serializers.ModelSerializer):
     material_name = serializers.CharField(max_length=150, default="")
     strip_qty = serializers.CharField(max_length=2, default=0)
-    batch = serializers.CharField(max_length=2, default=0)
     expire_date = serializers.DateField(default=date.today()) 
+    batch = serializers.SerializerMethodField()
     class Meta:
         model = ReplacementList
         fields = ['matnr', 'batch', 'pack_qty', 'unit_qty', 'net_val', 'material_name', 'strip_qty', 'expire_date']
+    def get_batch(self, obj):
+        return ""
 
 class ReplacementApprovalListSerializer(serializers.ModelSerializer):
     replacement_list = ReplacementListSerializer(many=True, read_only=True)
