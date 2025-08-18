@@ -424,3 +424,17 @@ class ReplacementDeliveredList(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
         paginate_results= paginate(data_list,page=page,per_page=page_size)
         return Response(paginate_results, status=status.HTTP_200_OK)
+    
+class ReplacementDelivery(APIView):
+    def put(self, request):
+        invoice_no = request.data.get('invoice_no')
+        if not invoice_no:
+            return Response({"success":False,"message": "Please provide invoice_no."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            info = WithdrawalInfo.objects.get(invoice_no=invoice_no)
+            info.delivery_date = date.today()
+            info.last_status = info.Status.DELIVERED
+            info.save()
+            return Response({"success":True,"message": "Delivery data updated successfully.", "data":{"invoice_no":invoice_no}}, status=status.HTTP_200_OK)
+        except WithdrawalInfo.DoesNotExist:
+            return Response({"success":False,"message": "Withdrawal request does not exist"}, status=status.HTTP_404_NOT_FOUND)
