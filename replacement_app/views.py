@@ -204,3 +204,17 @@ class ReplacementOrderRequestList(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
         paginate_results= paginate(data_list,page=page,per_page=page_size)
         return Response(paginate_results, status=status.HTTP_200_OK)
+
+class AssignDeliveryDA(APIView):
+    def put(self, request):
+        invoice_no = request.data.get("invoice_no")
+        delivery_da_id = request.data.get("delivery_da_id")
+        if not invoice_no or not delivery_da_id:
+            return Response({"success":False,"message": "Please provide invoice_no and delivery_da_id."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            info = WithdrawalInfo.objects.get(invoice_no=invoice_no)
+        except WithdrawalInfo.DoesNotExist:
+            return Response({"success":False,"message": "Withdrawal info does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        info.delivery_da_id = delivery_da_id
+        info.save()
+        return Response({"success":True,"message": "DA assigned successfully.", "data":{"invoice_no":invoice_no, "delivery_da_id":delivery_da_id}}, status=status.HTTP_200_OK)
