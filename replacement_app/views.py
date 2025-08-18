@@ -216,5 +216,6 @@ class AssignDeliveryDA(APIView):
         except WithdrawalInfo.DoesNotExist:
             return Response({"success":False,"message": "Withdrawal info does not exist"}, status=status.HTTP_404_NOT_FOUND)
         info.delivery_da_id = delivery_da_id
+        info.last_status = info.Status.DELIVERY_PENDING
         info.save()
         return Response({"success":True,"message": "DA assigned successfully.", "data":{"invoice_no":invoice_no, "delivery_da_id":delivery_da_id}}, status=status.HTTP_200_OK)
