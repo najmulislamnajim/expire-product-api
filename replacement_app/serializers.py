@@ -30,6 +30,7 @@ class AvailableReplacementListSerializer(serializers.ModelSerializer):
 class ReplacementListSerializer(serializers.ModelSerializer):
     material_name = serializers.CharField(max_length=150, default="")
     strip_qty = serializers.CharField(max_length=2, default=0)
+    batch = serializers.CharField(max_length=2, default=0)
     expire_date = serializers.DateField(default=date.today()) 
     class Meta:
         model = ReplacementList
