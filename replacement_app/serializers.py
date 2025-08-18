@@ -28,9 +28,9 @@ class AvailableReplacementListSerializer(serializers.ModelSerializer):
         read_only_fields = ['total_amount']  
 
 class ReplacementListSerializer(serializers.ModelSerializer):
-    material_name = serializers.CharField(max_length=150, default="")
-    strip_qty = serializers.CharField(max_length=2, default=0)
-    expire_date = serializers.DateField(default=date.today()) 
+    material_name = serializers.CharField(max_length=150, default="", read_only=True)
+    strip_qty = serializers.CharField(max_length=2, default=0, read_only=True)
+    expire_date = serializers.DateField(default=date.today(),read_only=True) 
     batch = serializers.SerializerMethodField()
     class Meta:
         model = ReplacementList
