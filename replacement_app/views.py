@@ -430,8 +430,8 @@ class ReplacementDeliveredList(APIView):
         return Response(paginate_results, status=status.HTTP_200_OK)
     
 class ReplacementDelivery(APIView):
-    def put(self, request):
-        invoice_no = request.data.get('invoice_no')
+    def put(self, request, invoice_no):
+        # invoice_no = request.data.get('invoice_no')
         if not invoice_no:
             return Response({"success":False,"message": "Please provide invoice_no."}, status=status.HTTP_400_BAD_REQUEST)
         try:

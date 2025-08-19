@@ -10,5 +10,5 @@ urlpatterns = [
     path('assign_delivery_da', replacement_views.AssignDeliveryDA.as_view(), name='assign_delivery_da'),
     path('delivery_pending_list', replacement_views.ReplacementDeliveryPendingList.as_view(), name='delivery_pending_list'),
     path('delivered_list', replacement_views.ReplacementDeliveredList.as_view(), name='delivered_list'),
-    path('delivery', replacement_views.ReplacementDelivery.as_view(), name='replacement_delivery'),
+    path('delivery/<str:invoice_no>', replacement_views.ReplacementDelivery.as_view(), name='replacement_delivery'),
 ]
