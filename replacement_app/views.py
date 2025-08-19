@@ -329,9 +329,10 @@ class ReplacementDeliveredList(APIView):
         rm_id = request.query_params.get('rm_id')
         depot_id = request.query_params.get('depot_id')
         da_id = request.query_params.get('da_id')
+        delivery_da_id = request.query_params.get('delivery_da_id')
         # Validate inputs 
-        if not any([mio_id, rm_id, depot_id, da_id]):
-            return Response({"success":False,"message": "Please provide at least one ID (mio_id, rm_id, depot_id, or da_id)."}, status=status.HTTP_400_BAD_REQUEST)
+        if not any([mio_id, rm_id, depot_id, da_id, delivery_da_id]):
+            return Response({"success":False,"message": "Please provide at least one ID (mio_id, rm_id, depot_id, da_id, or  delivery_Da_id)."}, status=status.HTTP_400_BAD_REQUEST)
         params = []
         filters = []
         if mio_id:
@@ -346,6 +347,9 @@ class ReplacementDeliveredList(APIView):
         if da_id:
             filters.append("wi.da_id = %s")
             params.append(da_id)
+        if delivery_da_id:
+            filters.append("wi.delivery_da_id = %s")
+            params.append(delivery_da_id)
             
         where_clause = " AND ".join(filters)
         sql= f"""
