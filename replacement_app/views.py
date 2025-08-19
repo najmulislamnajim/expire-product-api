@@ -504,6 +504,7 @@ class AvailableReplacementListView2(APIView):
                     "invoice_no": row[1],
                     "invoice_type": row[23],
                     "mio_id": row[2],
+                    "mio_name": "",
                     "rm_id": row[3],
                     "da_id": row[4],
                     "depot_id": row[5],
