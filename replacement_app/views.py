@@ -584,3 +584,118 @@ class AvailableReplacementListView2(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
         paginate_results= paginate(data_list,page=page,per_page=page_size)
         return Response(paginate_results, status=status.HTTP_200_OK)
+    
+class RmApprovalListView(APIView):
+    def get(self, request):
+        mio_id = request.query_params.get('mio_id')
+        rm_id = request.query_params.get('rm_id')
+        depot_id = request.query_params.get('depot_id')
+        da_id = request.query_params.get('da_id')
+        # Validate inputs 
+        if not any([mio_id, rm_id, depot_id, da_id]):
+            return Response({"success":False,"message": "Please provide at least one ID (mio_id, rm_id, depot_id, or da_id)."}, status=status.HTTP_400_BAD_REQUEST)
+        params = []
+        filters = []
+        if mio_id:
+            filters.append("wi.mio_id = %s")
+            params.append(mio_id)
+        if rm_id:
+            filters.append("wi.rm_id = %s")
+            params.append(rm_id)
+        if depot_id:
+            filters.append("wi.depot_id = %s")
+            params.append(depot_id)
+        if da_id:
+            filters.append("wi.da_id = %s")
+            params.append(da_id)
+            
+        where_clause = " AND ".join(filters)
+        sql= f"""
+        SELECT
+            wi.*,
+            rl.*,
+            CONCAT(c.name1, c.name2) AS partner_name,
+            CONCAT(c.street, c.street1, c.street2, c.upazilla, c.district) AS partner_address,
+            c.mobile_no AS partner_mobile_no,
+            c.contact_person,
+            m.material_name
+        FROM expr_withdrawal_info wi 
+        INNER JOIN expr_replacement_list rl ON wi.id = rl.invoice_id
+        INNER JOIN rpl_customer c ON wi.partner_id = c.partner
+        INNER JOIN rpl_material m ON rl.matnr = m.matnr
+        WHERE {where_clause} AND last_status='replacement_approval';
+        """
+        with connection.cursor() as cursor:
+                cursor.execute(sql, params)
+                if cursor.description is None:
+                    return Response(paginate([],message="No data found.", page=1, per_page=10), status=status.HTTP_200_OK)
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+        # Column mapping
+        if not rows:
+            return Response(paginate([],message="No data found.", page=1, per_page=10), status=status.HTTP_200_OK)
+
+        grouped_data = {}
+        for row in rows:
+            if row[1] not in grouped_data:
+                data = {
+                    "id": row[0],
+                    "partner_name": row[34],
+                    "customer_address": row[35],
+                    "customer_mobile": row[36],
+                    "contact_person": row[37],
+                    "invoice_no": row[1],
+                    "invoice_type": row[23],
+                    "mio_id": row[2],
+                    "mio_name": "",
+                    "rm_id": row[3],
+                    "da_id": row[4],
+                    "depot_id": row[5],
+                    "route_id": row[6],
+                    "partner_id": row[7],
+                    "request_approval":True if row[8] else False,
+                    "withdrawal_confirmation":True if row[9] else False,
+                    "replacement_order":True if row[10] else False,
+                    "order_approval":True if row[11] else False,
+                    "order_delivery":True if row[12] else False,
+                    "request_date": row[13],
+                    "request_approval_date": row[14],
+                    "withdrawal_date": row[15],
+                    "withdrawal_approval_date": row[16],
+                    "order_date": row[17],
+                    "order_approval_date": row[18],
+                    "delivery_da_id": row[24],
+                    "delivery_date": row[19],
+                    "last_status": row[20],
+                    "created_at": row[21],
+                    "updated_at": row[22],
+                    "replacement_list": []
+                }
+                grouped_data[row[1]] = data
+            replacement_list_data={
+                "id": row[25],
+                "matnr": row[26],
+                "material_name": row[38],
+                "batch": "" if not row[27] else row[27],
+                "pack_qty": row[28],
+                "unit_qty": row[29],
+                "net_val": row[30],
+                "created_at": row[31],
+                "updated_at": row[32],
+                "invoice_id": row[33]
+            }
+            grouped_data[row[1]]['replacement_list'].append(replacement_list_data)
+
+        # Convert to list
+        data_list = list(grouped_data.values())
+
+        # pagination
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('per_page', 10))
+        if page <= 0 or page_size <= 0:
+            return Response({
+                "success": False,
+                "message": "Invalid 'page' or 'per_page'. Must be positive integers."
+            }, status=status.HTTP_400_BAD_REQUEST)
+        paginate_results= paginate(data_list,page=page,per_page=page_size)
+        return Response(paginate_results, status=status.HTTP_200_OK)
